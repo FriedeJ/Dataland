@@ -130,3 +130,29 @@ export function filterTree(nodes: TreeNode[], query: string, typeNames: Record<s
     )
     .filter((node): node is TreeNode => node !== undefined && (node.leaf || (node.children?.length ?? 0) > 0));
 }
+
+export interface ExampleRow {
+  field: string;
+  value: string;
+}
+
+/**
+ * Flattens a nested example object into rows with dotted field paths, e.g. `dataSource.page`.
+ * Null or empty values are displayed as an en dash.
+ * @param example the example object of a data point base type
+ * @param prefix the path prefix of the current nesting level
+ * @returns the flattened rows in the original order
+ */
+export function flattenExample(example: unknown, prefix = ''): ExampleRow[] {
+  if (typeof example !== 'object' || example === null) {
+    return [{ field: prefix, value: String(example) }];
+  }
+  return Object.entries(example).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      return flattenExample(value, path);
+    }
+    const isEmpty = value === null || value === undefined || value === '';
+    return [{ field: path, value: isEmpty ? '–' : String(value) }];
+  });
+}

@@ -46,7 +46,7 @@
         <div data-test="data-model-framework-header">
           <h2>{{ frameworkSpec.name }}</h2>
           <p>{{ frameworkSpec.businessDefinition }}</p>
-          <small>{{ dataPointCount }} data points</small>
+          <small>{{ dataPointCount }} {{ dataPointCount === 1 ? 'data point' : 'data points' }}</small>
         </div>
 
         <div class="data-model-layout">

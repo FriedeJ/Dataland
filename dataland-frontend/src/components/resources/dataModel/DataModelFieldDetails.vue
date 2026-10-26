@@ -52,9 +52,14 @@
             data-test="data-model-toggle-example"
             @click="showExample = !showExample"
           />
-          <pre v-if="showExample" class="data-model-example" data-test="data-model-example">{{
-            JSON.stringify(baseTypeSpec.example, null, 2)
-          }}</pre>
+          <DataTable v-if="showExample" :value="exampleRows" size="small" data-test="data-model-example">
+            <Column field="field" header="Field">
+              <template #body="{ data }">
+                <code>{{ data.field }}</code>
+              </template>
+            </Column>
+            <Column field="value" header="Example value" body-class="data-model-example-value" />
+          </DataTable>
         </template>
       </section>
 
@@ -78,6 +83,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
 import Message from 'primevue/message';
 import PrimeButton from 'primevue/button';
 import ProgressSpinner from 'primevue/progressspinner';
@@ -86,6 +93,7 @@ import {
   useDataPointBaseTypeQuery,
   useDataPointTypeQuery,
 } from '@/api-queries/specification-service/useSpecificationQueries.ts';
+import { flattenExample } from '@/utils/DataModelUtils.ts';
 
 const props = defineProps<{
   dataPointTypeId: string;
@@ -104,6 +112,7 @@ const typeQuery = useDataPointTypeQuery(() => props.dataPointTypeId);
 const typeSpec = computed(() => typeQuery.data.value);
 const baseTypeQuery = useDataPointBaseTypeQuery(() => typeSpec.value?.dataPointBaseType.id);
 const baseTypeSpec = computed(() => baseTypeQuery.data.value);
+const exampleRows = computed(() => flattenExample(baseTypeSpec.value?.example));
 </script>
 
 <style scoped>
@@ -133,10 +142,7 @@ const baseTypeSpec = computed(() => baseTypeQuery.data.value);
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.data-model-example {
-  background: var(--p-surface-100, #f4f4f4);
-  padding: 0.75rem;
-  overflow-x: auto;
-  font-size: 0.85rem;
+.data-model-details :deep(.data-model-example-value) {
+  overflow-wrap: anywhere;
 }
 </style>

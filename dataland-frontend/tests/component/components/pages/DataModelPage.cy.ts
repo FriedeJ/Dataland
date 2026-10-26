@@ -58,7 +58,7 @@ const extendedDateBaseType = {
   name: 'General date data point with an extended source',
   businessDefinition: 'A date without a time-zone.',
   validatedBy: 'org.dataland.SomeValidator',
-  example: { value: '2007-03-05', quality: 'Reported' },
+  example: { value: '2007-03-05', quality: 'Reported', dataSource: { page: '5-7', fileName: null } },
   usedBy: [ref('data-point-types', 'extendedDateFiscalYearEnd')],
 };
 
@@ -123,7 +123,8 @@ describe('Component tests for the data model documentation page', () => {
       cy.get('[data-test="data-model-field-base-type"]').should('contain.text', 'extendedDate');
       cy.get('[data-test="data-model-example"]').should('not.exist');
       cy.get('[data-test="data-model-toggle-example"]').click();
-      cy.get('[data-test="data-model-example"]').should('contain.text', '2007-03-05');
+      cy.get('[data-test="data-model-example"]').should('contain.text', 'value').and('contain.text', '2007-03-05');
+      cy.get('[data-test="data-model-example"]').should('not.contain.text', '{');
       cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDateFiscalYearEnd');
     });
   });
