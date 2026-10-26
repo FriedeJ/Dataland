@@ -1,87 +1,91 @@
 <template>
-  <TheContent class="data-model-page" data-test="data-model-page">
-    <div class="data-model-title-row">
-      <h1>Data Model Documentation</h1>
-      <PrimeSelect
-        :model-value="frameworkId"
-        :options="frameworks"
-        option-label="name"
-        option-value="id"
-        placeholder="Select a framework"
-        class="data-model-framework-select"
-        data-test="data-model-framework-select"
-        @update:model-value="selectFramework"
-      />
-    </div>
-    <p class="data-model-intro">
-      Explore which data points each framework consists of, how they are defined, and which frameworks share them.
-    </p>
+  <TheContent data-test="data-model-page">
+    <MarginWrapper class="data-model-page">
+      <div class="data-model-title-row">
+        <h1>Data Model Documentation</h1>
+        <PrimeSelect
+          :model-value="frameworkId"
+          :options="frameworks"
+          option-label="name"
+          option-value="id"
+          placeholder="Select a framework"
+          class="data-model-framework-select"
+          data-test="data-model-framework-select"
+          @update:model-value="selectFramework"
+        />
+      </div>
+      <p class="data-model-intro">
+        Explore which data points each framework consists of, how they are defined, and which frameworks share them.
+      </p>
 
-    <Message v-if="frameworkListQuery.isError.value" severity="error"
-      >The list of frameworks could not be loaded.</Message
-    >
-    <ProgressSpinner v-else-if="frameworkListQuery.isPending.value" />
-
-    <div v-else-if="!frameworkId" class="data-model-cards" data-test="data-model-framework-cards">
-      <Card
-        v-for="framework in frameworks"
-        :key="framework.id"
-        class="cursor-pointer"
-        :data-test="`data-model-card-${framework.id}`"
-        @click="selectFramework(framework.id)"
+      <Message v-if="frameworkListQuery.isError.value" severity="error"
+        >The list of frameworks could not be loaded.</Message
       >
-        <template #title>{{ framework.name }}</template>
-        <template #content
-          ><code>{{ framework.id }}</code></template
+      <ProgressSpinner v-else-if="frameworkListQuery.isPending.value" />
+
+      <div v-else-if="!frameworkId" class="data-model-cards" data-test="data-model-framework-cards">
+        <Card
+          v-for="framework in frameworks"
+          :key="framework.id"
+          class="cursor-pointer"
+          :data-test="`data-model-card-${framework.id}`"
+          @click="selectFramework(framework.id)"
         >
-      </Card>
-    </div>
+          <template #title>{{ framework.name }}</template>
+          <template #content
+            ><code>{{ framework.id }}</code></template
+          >
+        </Card>
+      </div>
 
-    <template v-else>
-      <Message v-if="frameworkQuery.isError.value" severity="error" data-test="data-model-framework-error">
-        This framework could not be loaded. It may not have a documented data model yet.
-      </Message>
-      <ProgressSpinner v-else-if="frameworkQuery.isPending.value" />
-      <template v-else-if="frameworkSpec">
-        <div data-test="data-model-framework-header">
-          <h2>{{ frameworkSpec.name }}</h2>
-          <p>{{ frameworkSpec.businessDefinition }}</p>
-          <small>{{ dataPointCount }} {{ dataPointCount === 1 ? 'data point' : 'data points' }}</small>
-        </div>
+      <template v-else>
+        <Message v-if="frameworkQuery.isError.value" severity="error" data-test="data-model-framework-error">
+          This framework could not be loaded. It may not have a documented data model yet.
+        </Message>
+        <ProgressSpinner v-else-if="frameworkQuery.isPending.value" />
+        <template v-else-if="frameworkSpec">
+          <div data-test="data-model-framework-header">
+            <h2>{{ frameworkSpec.name }}</h2>
+            <p>{{ frameworkSpec.businessDefinition }}</p>
+            <small>{{ dataPointCount }} {{ dataPointCount === 1 ? 'data point' : 'data points' }}</small>
+          </div>
 
-        <div class="data-model-layout">
-          <div class="data-model-tree-column">
-            <IconField class="data-model-search">
-              <InputIcon class="pi pi-search" />
-              <InputText v-model="searchQuery" placeholder="Search data points" fluid data-test="data-model-search" />
-            </IconField>
-            <Tree
-              v-model:expandedKeys="expandedKeys"
-              v-model:selectionKeys="selectionKeys"
-              :value="visibleNodes"
-              selection-mode="single"
-              data-test="data-model-tree"
-              @node-select="onNodeSelect"
-            />
-            <p v-if="visibleNodes.length === 0" data-test="data-model-no-results">No data points match your search.</p>
+          <div class="data-model-layout">
+            <div class="data-model-tree-column">
+              <IconField class="data-model-search">
+                <InputIcon class="pi pi-search" />
+                <InputText v-model="searchQuery" placeholder="Search data points" fluid data-test="data-model-search" />
+              </IconField>
+              <Tree
+                v-model:expandedKeys="expandedKeys"
+                v-model:selectionKeys="selectionKeys"
+                :value="visibleNodes"
+                selection-mode="single"
+                data-test="data-model-tree"
+                @node-select="onNodeSelect"
+              />
+              <p v-if="visibleNodes.length === 0" data-test="data-model-no-results">
+                No data points match your search.
+              </p>
+            </div>
+            <div class="data-model-details-column">
+              <DataModelFieldDetails
+                v-if="selectedLeaf"
+                :key="selectedLeaf.dataPointTypeId"
+                :data-point-type-id="selectedLeaf.dataPointTypeId"
+                :alias-export="selectedLeaf.aliasExport"
+                :current-framework-id="frameworkId"
+                :framework-names="frameworkNames"
+                @select-framework="selectFrameworkKeepingField"
+              />
+              <p v-else class="data-model-hint" data-test="data-model-no-selection">
+                Select a data point in the tree to see its definition.
+              </p>
+            </div>
           </div>
-          <div class="data-model-details-column">
-            <DataModelFieldDetails
-              v-if="selectedLeaf"
-              :key="selectedLeaf.dataPointTypeId"
-              :data-point-type-id="selectedLeaf.dataPointTypeId"
-              :alias-export="selectedLeaf.aliasExport"
-              :current-framework-id="frameworkId"
-              :framework-names="frameworkNames"
-              @select-framework="selectFrameworkKeepingField"
-            />
-            <p v-else class="data-model-hint" data-test="data-model-no-selection">
-              Select a data point in the tree to see its definition.
-            </p>
-          </div>
-        </div>
+        </template>
       </template>
-    </template>
+    </MarginWrapper>
   </TheContent>
 </template>
 
@@ -98,6 +102,7 @@ import ProgressSpinner from 'primevue/progressspinner';
 import Tree from 'primevue/tree';
 import type { TreeNode } from 'primevue/treenode';
 import TheContent from '@/components/generics/TheContent.vue';
+import MarginWrapper from '@/components/wrapper/MarginWrapper.vue';
 import DataModelFieldDetails from '@/components/resources/dataModel/DataModelFieldDetails.vue';
 import {
   useDataPointTypesQuery,
@@ -274,11 +279,10 @@ async function onNodeSelect(node: TreeNode): Promise<void> {
 </script>
 
 <style scoped>
-.data-model-page {
-  padding: 1rem;
+.data-model-page :deep(.col-12) {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  /* The app shell centers text by default. */
-  text-align: left;
   box-sizing: border-box;
   max-width: 100%;
 }
