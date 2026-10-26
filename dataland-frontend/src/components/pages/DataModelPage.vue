@@ -165,12 +165,50 @@ const selectedLeaf = computed<DataModelLeafData | undefined>(() => {
   return (find(allNodes.value)?.data as DataModelNodeData | undefined)?.leaf;
 });
 
+/**
+ * Collects the keys of all category nodes above the leaf of the given data point type.
+ */
+function findAncestorKeys(nodes: TreeNode[], dataPointTypeId: string, trail: string[] = []): string[] | undefined {
+  for (const node of nodes) {
+    if (node.leaf) {
+      if ((node.data as DataModelNodeData).leaf?.dataPointTypeId === dataPointTypeId) return trail;
+    } else {
+      const found = findAncestorKeys(node.children ?? [], dataPointTypeId, [...trail, node.key as string]);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Expands the categories above the selected data point without collapsing anything the user has opened.
+ */
+function revealSelectedField(): void {
+  if (!selectedFieldId.value) return;
+  const ancestors = findAncestorKeys(allNodes.value, selectedFieldId.value) ?? [];
+  expandedKeys.value = { ...expandedKeys.value, ...Object.fromEntries(ancestors.map((key) => [key, true])) };
+}
+
+let expandedKeysBeforeSearch: Record<string, boolean> | undefined;
+
+// The tree starts fully collapsed; only the path to a deep-linked data point is opened.
+watch(
+  allNodes,
+  () => {
+    expandedKeysBeforeSearch = undefined;
+    expandedKeys.value = {};
+    revealSelectedField();
+  },
+  { immediate: true }
+);
+
+// Selecting an item must not change the expansion state of the tree.
 watch(
   [allNodes, selectedFieldId],
   () => {
-    expandedKeys.value = collectExpandableKeys(allNodes.value);
     const key = selectedFieldId.value ? findLeafKey(allNodes.value, selectedFieldId.value) : undefined;
     selectionKeys.value = key ? { [key]: true } : {};
+    revealSelectedField();
   },
   { immediate: true }
 );
@@ -180,7 +218,13 @@ watch(frameworkId, () => {
 });
 
 watch(searchQuery, (query) => {
-  if (query.trim()) expandedKeys.value = collectExpandableKeys(visibleNodes.value);
+  if (query.trim()) {
+    expandedKeysBeforeSearch ??= expandedKeys.value;
+    expandedKeys.value = collectExpandableKeys(visibleNodes.value);
+  } else if (expandedKeysBeforeSearch) {
+    expandedKeys.value = expandedKeysBeforeSearch;
+    expandedKeysBeforeSearch = undefined;
+  }
 });
 
 /**
@@ -200,10 +244,17 @@ async function selectFrameworkKeepingField(newFrameworkId: string): Promise<void
 
 /**
  * Stores the selected data point in the URL so that the view is shareable.
+ * Clicking a category only toggles it and keeps the current selection.
  */
 async function onNodeSelect(node: TreeNode): Promise<void> {
   const leaf = (node.data as DataModelNodeData).leaf;
-  if (!leaf) return;
+  if (!leaf) {
+    const key = node.key as string;
+    expandedKeys.value = { ...expandedKeys.value, [key]: !expandedKeys.value[key] };
+    const selectedKey = selectedFieldId.value ? findLeafKey(allNodes.value, selectedFieldId.value) : undefined;
+    selectionKeys.value = selectedKey ? { [selectedKey]: true } : {};
+    return;
+  }
   await router.replace({ query: { ...route.query, field: leaf.dataPointTypeId } });
 }
 </script>

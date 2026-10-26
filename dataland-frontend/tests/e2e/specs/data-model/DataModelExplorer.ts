@@ -19,6 +19,8 @@ describeIf(
       cy.url().should('include', '/data-model/sfdr');
       cy.get('[data-test="data-model-framework-header"]').should('contain.text', 'SFDR');
 
+      cy.get('[data-test="data-model-tree"]').contains('General').click();
+      cy.get('[data-test="data-model-tree"]').contains('Company').click();
       cy.get('[data-test="data-model-tree"]').contains('Fiscal Year End').click();
       cy.url().should('include', 'field=extendedDateFiscalYearEnd');
       cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');

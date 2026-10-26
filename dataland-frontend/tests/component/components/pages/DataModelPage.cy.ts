@@ -111,10 +111,12 @@ describe('Component tests for the data model documentation page', () => {
       cy.get('[data-test="data-model-framework-header"]')
         .should('contain.text', 'Sustainability Finance Disclosure Regulation')
         .and('contain.text', '2 data points');
-      cy.get('[data-test="data-model-tree"]').should('contain.text', 'Fiscal Year End');
+      cy.get('[data-test="data-model-tree"]').should('contain.text', 'General');
       cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Empty Category');
       cy.get('[data-test="data-model-no-selection"]').should('exist');
 
+      cy.get('[data-test="data-model-tree"]').contains('General').click();
+      cy.get('[data-test="data-model-tree"]').contains('Company').click();
       cy.get('[data-test="data-model-tree"]').contains('Fiscal Year End').click();
       cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');
       cy.get('[data-test="data-model-field-definition"]').should('contain.text', 'The date the fiscal year ends.');
@@ -141,12 +143,36 @@ describe('Component tests for the data model documentation page', () => {
 
   it('Filters the tree with the search field', () => {
     mountAt('/data-model/sfdr');
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope1 Ghg Emissions');
+    cy.get('[data-test="data-model-search"]').type('scope1');
     cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope1 Ghg Emissions');
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Fiscal Year End');
+    cy.get('[data-test="data-model-search"]').clear();
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope1 Ghg Emissions');
     cy.get('[data-test="data-model-search"]').type('fiscal');
     cy.get('[data-test="data-model-tree"]').should('contain.text', 'Fiscal Year End');
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope1');
     cy.get('[data-test="data-model-search"]').clear().type('does-not-exist');
     cy.get('[data-test="data-model-no-results"]').should('exist');
+  });
+
+  it('Starts fully collapsed, keeps the expansion state when selecting and opens the path of a deep link', () => {
+    mountAt('/data-model/sfdr');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'General').and('contain.text', 'Environmental');
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Company');
+
+    cy.get('[data-test="data-model-tree"]').contains('Environmental').click();
+    cy.get('[data-test="data-model-tree"]').contains('Emissions').click();
+    cy.get('[data-test="data-model-tree"]').contains('Scope1 Ghg Emissions').click();
+    cy.get('[data-test="data-model-field-name"]').should('have.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope1 Ghg Emissions');
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Company');
+  });
+
+  it('Opens only the path to the selected data point when loading a deep link', () => {
+    mountAt('/data-model/sfdr?field=extendedDecimalScope1');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope1 Ghg Emissions');
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Company');
   });
 
   it('Shows an error message if the framework cannot be loaded', () => {

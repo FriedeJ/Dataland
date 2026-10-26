@@ -23,6 +23,14 @@
             }"
             >info</em
           >
+          <RouterLink
+            v-if="getDataModelLink(cellOrSectionConfig)"
+            :to="getDataModelLink(cellOrSectionConfig)!"
+            class="pi pi-book data-model-link"
+            data-test="dataModelLink"
+            aria-label="Show data point definition in the data model documentation"
+            v-tooltip.top="'Show definition in the data model documentation'"
+          />
         </td>
         <td
           v-for="(sinlgeDataAndMetaInfo, idx) in dataAndMetaInfo"
@@ -129,6 +137,8 @@ import {
 } from '@/components/resources/dataTable/MultiLayerDataTableConfiguration';
 import Tooltip from 'primevue/tooltip';
 import { computed, inject, nextTick, onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import { DataTypeEnum } from '@clients/backend';
 import PrimeButton from 'primevue/button';
 import { useDialog } from 'primevue/usedialog';
 import EditDataPointDialog from '@/components/resources/dataTable/modals/EditDataPointDialog.vue';
@@ -228,6 +238,18 @@ const props = defineProps<{
   inReviewMode: boolean;
 }>();
 
+/**
+ * Builds the link to the data model documentation entry of a cell, if the framework is documented in the
+ * specification service and the cell is backed by a data point type.
+ * @param cellConfig the configuration of the cell
+ * @returns the route location or undefined if no documentation is available
+ */
+function getDataModelLink(cellConfig: MLDTCellConfig<T>): string | undefined {
+  const dataType = props.dataAndMetaInfo[0]?.metaInfo.dataType;
+  if (!cellConfig.dataPointTypeId || !dataType || dataType === DataTypeEnum.Lksg) return undefined;
+  return `/data-model/${dataType}?field=${encodeURIComponent(cellConfig.dataPointTypeId)}`;
+}
+
 onMounted(() => {
   expandSectionsOnPageLoad();
 });
@@ -280,6 +302,14 @@ function openEditDataPointModal(idx: number, cellOrSectionConfig: MLDTCellConfig
 <style scoped>
 .info-icon {
   cursor: help;
+}
+
+.data-model-link {
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+  color: inherit;
+  text-decoration: none;
+  vertical-align: middle;
 }
 
 .vertical-align-top {

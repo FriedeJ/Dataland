@@ -271,6 +271,61 @@ describe('Tests for the MultiLayerDataTable component', () => {
     getCellRowHeaderContainer('Level 2 - String').find('em').should('not.exist');
   });
 
+  describe('Tests for the link to the data model documentation', () => {
+    const configWithDataPointType: MLDTConfig<DummyFrameworkForTest> = [
+      {
+        type: 'cell',
+        label: 'Documented field',
+        dataPointTypeId: 'extendedDateFiscalYearEnd',
+        shouldDisplay: () => true,
+        valueGetter: (dataset) => ({
+          displayComponentName: MLDTDisplayComponentName.StringDisplayComponent,
+          displayValue: dataset.stringOnLevel2,
+        }),
+      },
+      {
+        type: 'cell',
+        label: 'Field without data point type',
+        shouldDisplay: () => true,
+        valueGetter: (dataset) => ({
+          displayComponentName: MLDTDisplayComponentName.StringDisplayComponent,
+          displayValue: dataset.stringOnLevel2,
+        }),
+      },
+    ];
+
+    /**
+     * Mounts the table with a config containing data point types for a dataset of the given framework
+     * @param dataType the framework of the dataset
+     */
+    function mountWithDataType(dataType: DataTypeEnum): void {
+      cy.mountWithPlugins(MultiLayerDataTable, {
+        props: {
+          config: configWithDataPointType,
+          dataAndMetaInfo: [
+            {
+              ...dummyFrameworkTestDataAndMetaInfo1,
+              metaInfo: { ...dummyFrameworkTestDataAndMetaInfo1.metaInfo, dataType: dataType },
+            },
+          ],
+        },
+      });
+    }
+
+    it('Shows a link to the matching data model entry only for fields backed by a data point type', () => {
+      mountWithDataType(DataTypeEnum.Sfdr);
+      getCellRowHeaderContainer('Documented field')
+        .find('[data-test=dataModelLink]')
+        .should('have.attr', 'href', '/data-model/sfdr?field=extendedDateFiscalYearEnd');
+      getCellRowHeaderContainer('Field without data point type').find('[data-test=dataModelLink]').should('not.exist');
+    });
+
+    it('Shows no link for frameworks that are not documented in the specification service', () => {
+      mountWithDataType(DataTypeEnum.Lksg);
+      getCellRowHeaderContainer('Documented field').find('[data-test=dataModelLink]').should('not.exist');
+    });
+  });
+
   it('Validate that show-if hidden fields and sections are displayed and highlighted in review mode', () => {
     cy.mountWithPlugins(MultiLayerDataTable, {
       // @ts-ignore
