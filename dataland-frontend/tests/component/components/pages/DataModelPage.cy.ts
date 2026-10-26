@@ -121,8 +121,6 @@ describe('Component tests for the data model documentation page', () => {
       cy.get('[data-test="data-model-field-alias"]').should('contain.text', 'FISCAL_YEAR_END');
       cy.get('[data-test="data-model-field-constraints"]').should('contain.text', 'min:0');
       cy.get('[data-test="data-model-field-base-type"]').should('contain.text', 'extendedDate');
-      cy.get('[data-test="data-model-example"]').should('not.exist');
-      cy.get('[data-test="data-model-toggle-example"]').click();
       cy.get('[data-test="data-model-example"]').should('contain.text', 'value').and('contain.text', '2007-03-05');
       cy.get('[data-test="data-model-example"]').should('not.contain.text', '{');
       cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDateFiscalYearEnd');

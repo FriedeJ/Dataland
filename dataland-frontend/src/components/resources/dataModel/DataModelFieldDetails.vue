@@ -45,14 +45,7 @@
             >)
           </p>
           <p>{{ baseTypeSpec.businessDefinition }}</p>
-          <PrimeButton
-            :label="showExample ? 'HIDE EXAMPLE' : 'SHOW EXAMPLE'"
-            variant="link"
-            size="small"
-            data-test="data-model-toggle-example"
-            @click="showExample = !showExample"
-          />
-          <DataTable v-if="showExample" :value="exampleRows" size="small" data-test="data-model-example">
+          <DataTable :value="exampleRows" size="small" data-test="data-model-example">
             <Column field="field" header="Field">
               <template #body="{ data }">
                 <code>{{ data.field }}</code>
@@ -82,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import Message from 'primevue/message';
@@ -105,8 +98,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   selectFramework: [frameworkId: string];
 }>();
-
-const showExample = ref(false);
 
 const typeQuery = useDataPointTypeQuery(() => props.dataPointTypeId);
 const typeSpec = computed(() => typeQuery.data.value);
