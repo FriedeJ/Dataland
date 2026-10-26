@@ -1,5 +1,5 @@
-import { computed, type MaybeRefOrGetter, toValue } from 'vue';
-import { useQuery, type UseQueryReturnType } from '@tanstack/vue-query';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useQueries, useQuery, type UseQueryReturnType } from '@tanstack/vue-query';
 import type {
   DataPointBaseTypeSpecification,
   DataPointTypeSpecification,
@@ -85,5 +85,34 @@ export function useDataPointBaseTypeQuery(
         .data,
     enabled: computed(() => !!toValue(baseTypeId)),
     staleTime: STATIC_STALE_TIME_MS,
+  });
+}
+
+/**
+ * Loads many data point types in parallel, sharing the cache with {@link useDataPointTypeQuery}.
+ * Types that are not loaded yet (or failed to load) are simply missing from the result.
+ * @param dataPointTypeIds the (possibly reactive) ids of the data point types to load
+ * @returns a computed map from data point type id to its specification
+ */
+export function useDataPointTypesQuery(
+  dataPointTypeIds: MaybeRefOrGetter<string[]>
+): ComputedRef<Record<string, DataPointTypeSpecification>> {
+  const apiClientProvider = useApiClient();
+  const results = useQueries({
+    queries: computed(() =>
+      toValue(dataPointTypeIds).map((id) => ({
+        queryKey: specificationKeys.dataPointType(id),
+        queryFn: async (): Promise<DataPointTypeSpecification> =>
+          (await apiClientProvider.apiClients.specificationController.getDataPointTypeSpecification(id)).data,
+        staleTime: STATIC_STALE_TIME_MS,
+      }))
+    ),
+  });
+  return computed(() => {
+    const map: Record<string, DataPointTypeSpecification> = {};
+    results.value.forEach((result) => {
+      if (result.data) map[result.data.dataPointType.id] = result.data;
+    });
+    return map;
   });
 }

@@ -100,10 +100,13 @@ import type { TreeNode } from 'primevue/treenode';
 import TheContent from '@/components/generics/TheContent.vue';
 import DataModelFieldDetails from '@/components/resources/dataModel/DataModelFieldDetails.vue';
 import {
+  useDataPointTypesQuery,
   useFrameworkListQuery,
   useFrameworkSpecificationQuery,
 } from '@/api-queries/specification-service/useSpecificationQueries.ts';
 import {
+  applyDataPointNames,
+  collectDataPointTypeIds,
   collectExpandableKeys,
   countDataPoints,
   filterTree,
@@ -129,13 +132,24 @@ const frameworkNames = computed(() => Object.fromEntries(frameworks.value.map((f
 const frameworkQuery = useFrameworkSpecificationQuery(frameworkId);
 const frameworkSpec = computed(() => frameworkQuery.data.value);
 
-const allNodes = computed<TreeNode[]>(() =>
+const parsedNodes = computed<TreeNode[]>(() =>
   frameworkSpec.value ? parseFrameworkSchema(frameworkSpec.value.schema) : []
 );
+const dataPointTypes = useDataPointTypesQuery(() => collectDataPointTypeIds(parsedNodes.value));
+const dataPointNames = computed(() =>
+  Object.fromEntries(Object.entries(dataPointTypes.value).map(([id, spec]) => [id, spec.name]))
+);
+const searchableTexts = computed(() =>
+  Object.fromEntries(
+    Object.entries(dataPointTypes.value).map(([id, spec]) => [id, `${spec.name} ${spec.businessDefinition}`])
+  )
+);
+// Labels are the humanized schema keys until the real names have been loaded.
+const allNodes = computed<TreeNode[]>(() => applyDataPointNames(parsedNodes.value, dataPointNames.value));
 const dataPointCount = computed(() => countDataPoints(allNodes.value));
 
 const searchQuery = ref('');
-const visibleNodes = computed(() => filterTree(allNodes.value, searchQuery.value));
+const visibleNodes = computed(() => filterTree(allNodes.value, searchQuery.value, searchableTexts.value));
 
 const expandedKeys = ref<Record<string, boolean>>({});
 const selectionKeys = ref<Record<string, boolean>>({});
@@ -193,7 +207,7 @@ let expandedKeysBeforeSearch: Record<string, boolean> | undefined;
 
 // The tree starts fully collapsed; only the path to a deep-linked data point is opened.
 watch(
-  allNodes,
+  parsedNodes,
   () => {
     expandedKeysBeforeSearch = undefined;
     expandedKeys.value = {};
@@ -204,7 +218,7 @@ watch(
 
 // Selecting an item must not change the expansion state of the tree.
 watch(
-  [allNodes, selectedFieldId],
+  [parsedNodes, selectedFieldId],
   () => {
     const key = selectedFieldId.value ? findLeafKey(allNodes.value, selectedFieldId.value) : undefined;
     selectionKeys.value = key ? { [key]: true } : {};

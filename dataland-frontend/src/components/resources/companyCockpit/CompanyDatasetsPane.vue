@@ -54,6 +54,15 @@
           :data-test="`${framework}-summary-panel`"
         />
       </div>
+      <div class="data-model-hint" data-test="dataModelHint">
+        <i class="pi pi-book" aria-hidden="true" />
+        <span>
+          Wondering what a data point means?
+          <RouterLink to="/data-model" class="text-primary font-semibold" data-test="dataModelHintLink">
+            Explore the data model documentation
+          </RouterLink>
+        </span>
+      </div>
       <button
         type="button"
         class="document-button cursor-pointer flex flex-row align-items-center justify-content-end button-reset"
@@ -75,7 +84,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, inject, unref, onMounted } from 'vue';
 import type { Ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 
 import Card from 'primevue/card';
 import PrimeButton from 'primevue/button';
@@ -239,6 +248,14 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
+.data-model-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
 .card-container {
   display: flex;
   gap: var(--spacing-xxxl);

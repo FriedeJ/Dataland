@@ -45,4 +45,11 @@ describe('Component test for the company datasets pane (non-sourceability)', () 
 
     cy.get('[data-test="summaryPanels"]').find('.summary-panel__non-sourceable').should('not.exist');
   });
+
+  it('Shows a hint with a link to the data model documentation', () => {
+    mountComponentWithMocks([]);
+
+    cy.get('[data-test="dataModelHint"]').should('be.visible');
+    cy.get('[data-test="dataModelHintLink"]').should('have.attr', 'href', '/data-model');
+  });
 });

@@ -39,19 +39,21 @@ format, plus hints and links elsewhere in the frontend that make users aware of 
 - [x] `DataModelFieldDetails.vue`: definition, constraints, calculation rules, base type + example, "used by" links
 - [x] Component tests (`tests/component/components/pages/DataModelPage.cy.ts`)
 
-### Phase 3 - Awareness hints and links  [partly done]
-- [x] "DATA MODEL" button on the dataset view (`ViewFrameworkBase.vue`) deep-linking to the current framework
-- [ ] Hint on the company cockpit
-- [ ] Link field info icons to the matching documentation entry
+### Phase 3 - Awareness hints and links  [done]
+- [x] "DATA MODEL" button on the dataset view (`ViewFrameworkBase.vue`)
+- [x] Book icon next to the info icon of each field on the dataset view, deep-linking to the data point
+- [x] Hint with link on the company cockpit
 - Footer link intentionally skipped: the footer is shared with the public website, but the page requires login.
 
 ### Phase 4 - Tests  [done]
-- [x] Component tests for the page and for the dataset view button
+- [x] Component tests (page, dataset view button, field link, cockpit hint)
 - [x] E2E test `tests/e2e/specs/data-model/` (registered in test group 1)
 
-### Phase 5 - Stretch  [todo]
-- [ ] Show real data point names in the tree (needs a list endpoint or batch fetching)
-- [ ] Search by business definition
+### Phase 5 - Stretch
+- [x] Real data point names in the tree (fetched in parallel, cached) and search by name and business definition
+- [x] Tree collapsed by default, expansion state preserved while browsing
+- [x] Example shown as table instead of raw JSON
+- [ ] Type column in the example table (needs a backend change)
 - [ ] Example download code, links to example datasets
 - [ ] Mobile polish (basic stacked layout exists)
 

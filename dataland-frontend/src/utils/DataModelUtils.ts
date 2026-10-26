@@ -156,3 +156,37 @@ export function flattenExample(example: unknown, prefix = ''): ExampleRow[] {
     return [{ field: path, value: isEmpty ? '–' : String(value) }];
   });
 }
+
+/**
+ * Collects the distinct data point type ids of all leaves below the given nodes.
+ * @param nodes the nodes to traverse
+ * @returns the distinct ids
+ */
+export function collectDataPointTypeIds(nodes: TreeNode[]): string[] {
+  const ids = new Set<string>();
+  const visit = (current: TreeNode[]): void => {
+    current.forEach((node) => {
+      const id = (node.data as DataModelNodeData).leaf?.dataPointTypeId;
+      if (node.leaf && id) ids.add(id);
+      visit(node.children ?? []);
+    });
+  };
+  visit(nodes);
+  return [...ids];
+}
+
+/**
+ * Replaces the humanized labels of the leaves with the real names of their data point types where known.
+ * @param nodes the tree nodes
+ * @param names map from data point type id to its display name
+ * @returns a copy of the tree with the updated labels
+ */
+export function applyDataPointNames(nodes: TreeNode[], names: Record<string, string>): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.leaf) {
+      const id = (node.data as DataModelNodeData).leaf?.dataPointTypeId;
+      return id && names[id] ? { ...node, label: names[id] } : node;
+    }
+    return { ...node, children: applyDataPointNames(node.children ?? [], names) };
+  });
+}
