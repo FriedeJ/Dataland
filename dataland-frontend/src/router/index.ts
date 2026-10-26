@@ -10,6 +10,7 @@ const ApiKeysPage = (): Promise<RouteComponent> => import('@/components/pages/Ap
 const SingleDataRequest = (): Promise<RouteComponent> => import('@/components/pages/SingleDataRequest.vue');
 const ViewFrameworkData = (): Promise<RouteComponent> => import('@/components/pages/ViewFrameworkData.vue');
 const DocumentOverview = (): Promise<RouteComponent> => import('@/components/pages/DocumentOverview.vue');
+const DataModelPage = (): Promise<RouteComponent> => import('@/components/pages/DataModelPage.vue');
 const DatasetOverview = (): Promise<RouteComponent> => import('@/components/pages/DatasetOverview.vue');
 const MyDataRequestsOverview = (): Promise<RouteComponent> => import('@/components/pages/MyDataRequestsOverview.vue');
 
@@ -164,6 +165,15 @@ const routes = [
     component: DatasetOverview,
     meta: {
       initialTabId: 'my-datasets',
+      requiresAuthentication: true,
+    },
+  },
+  {
+    path: '/data-model/:frameworkId?',
+    name: 'Data Model Documentation',
+    component: DataModelPage,
+    meta: {
+      initialTabId: 'data-model',
       requiresAuthentication: true,
     },
   },
