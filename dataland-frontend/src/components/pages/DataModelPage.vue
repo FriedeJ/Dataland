@@ -277,6 +277,10 @@ async function onNodeSelect(node: TreeNode): Promise<void> {
 .data-model-page {
   padding: 1rem;
   gap: 1rem;
+  /* The app shell centers text by default. */
+  text-align: left;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 .data-model-page h1,
 .data-model-page h2,
