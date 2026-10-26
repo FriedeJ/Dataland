@@ -39,7 +39,7 @@
 
     <template v-else>
       <Message v-if="frameworkQuery.isError.value" severity="error" data-test="data-model-framework-error">
-        This framework could not be loaded.
+        This framework could not be loaded. It may not have a documented data model yet.
       </Message>
       <ProgressSpinner v-else-if="frameworkQuery.isPending.value" />
       <template v-else-if="frameworkSpec">

@@ -39,16 +39,15 @@ format, plus hints and links elsewhere in the frontend that make users aware of 
 - [x] `DataModelFieldDetails.vue`: definition, constraints, calculation rules, base type + example, "used by" links
 - [x] Component tests (`tests/component/components/pages/DataModelPage.cy.ts`)
 
-### Phase 3 - Awareness hints and links  [todo]
-- [ ] "View data model" link on the dataset view (`ViewFrameworkBase.vue` / near `ChangeFrameworkDropdown.vue`)
-      deep-linking to the current framework
-- [ ] Optionally: hint on the company cockpit, footer link (`dataland-sharedElements`)
-- [ ] Optionally: link field info icons to the matching documentation entry
+### Phase 3 - Awareness hints and links  [partly done]
+- [x] "DATA MODEL" button on the dataset view (`ViewFrameworkBase.vue`) deep-linking to the current framework
+- [ ] Hint on the company cockpit
+- [ ] Link field info icons to the matching documentation entry
+- Footer link intentionally skipped: the footer is shared with the public website, but the page requires login.
 
-### Phase 4 - Tests  [partly done]
-- [x] Component tests
-- [ ] E2E test in `tests/e2e/specs/` (open tab, pick SFDR, select field, follow "used by" link)
-- [ ] Test for the dataset view link
+### Phase 4 - Tests  [done]
+- [x] Component tests for the page and for the dataset view button
+- [x] E2E test `tests/e2e/specs/data-model/` (registered in test group 1)
 
 ### Phase 5 - Stretch  [todo]
 - [ ] Show real data point names in the tree (needs a list endpoint or batch fetching)

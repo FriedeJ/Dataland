@@ -61,6 +61,15 @@
             />
 
             <PrimeButton
+              data-test="viewDataModelButton"
+              label="DATA MODEL"
+              icon="pi pi-book"
+              variant="outlined"
+              title="Show the definitions of all data points in this framework"
+              @click="router.push(`/data-model/${props.dataType}`)"
+            />
+
+            <PrimeButton
               @click="downloadData()"
               data-test="downloadDataButton"
               label="DOWNLOAD DATA"

@@ -36,6 +36,7 @@ if (testGroupingDisabled || cypressTestGroup === 1) {
   require('./user-api-key');
   require('./framework-view-and-upload-journey');
   require('./company-cockpit');
+  require('./data-model');
 }
 
 if (testGroupingDisabled || cypressTestGroup === 2) {
