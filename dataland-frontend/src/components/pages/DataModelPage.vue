@@ -1,8 +1,21 @@
 <template>
   <TheContent data-test="data-model-page">
     <MarginWrapper class="data-model-page">
-      <div class="data-model-title-row">
-        <h1>Data Model Documentation</h1>
+      <h1>Data Model Documentation</h1>
+      <p class="data-model-intro">
+        Explore which data points each framework consists of, how they are defined, and which frameworks share them.
+      </p>
+
+      <div
+        v-if="!frameworkListQuery.isError.value && !frameworkListQuery.isPending.value"
+        class="data-model-framework-row"
+      >
+        <div v-if="frameworkId && frameworkSpec" data-test="data-model-framework-header">
+          <h2>{{ frameworkSpec.name }}</h2>
+          <p>{{ frameworkSpec.businessDefinition }}</p>
+          <small>{{ dataPointCount }} {{ dataPointCount === 1 ? 'data point' : 'data points' }}</small>
+        </div>
+        <span v-else />
         <PrimeSelect
           :model-value="frameworkId"
           :options="frameworks"
@@ -14,9 +27,6 @@
           @update:model-value="selectFramework"
         />
       </div>
-      <p class="data-model-intro">
-        Explore which data points each framework consists of, how they are defined, and which frameworks share them.
-      </p>
 
       <Message v-if="frameworkListQuery.isError.value" severity="error"
         >The list of frameworks could not be loaded.</Message
@@ -44,11 +54,6 @@
         </Message>
         <ProgressSpinner v-else-if="frameworkQuery.isPending.value" />
         <template v-else-if="frameworkSpec">
-          <div data-test="data-model-framework-header">
-            <h2>{{ frameworkSpec.name }}</h2>
-            <p>{{ frameworkSpec.businessDefinition }}</p>
-            <small>{{ dataPointCount }} {{ dataPointCount === 1 ? 'data point' : 'data points' }}</small>
-          </div>
           <DataModelUsage :framework-id="frameworkSpec.framework.id" />
 
           <div class="data-model-toolbar">
@@ -397,7 +402,7 @@ async function onNodeSelect(node: TreeNode): Promise<void> {
 .data-model-page p {
   margin: 0;
 }
-.data-model-title-row {
+.data-model-framework-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
