@@ -60,7 +60,7 @@
               data-test="data-model-view-switch"
               @update:model-value="selectView"
             />
-            <IconField v-if="activeView !== 'diagram'" class="data-model-search">
+            <IconField class="data-model-search">
               <InputIcon class="pi pi-search" />
               <InputText v-model="searchQuery" placeholder="Search data points" fluid data-test="data-model-search" />
             </IconField>
@@ -83,7 +83,7 @@
               </template>
               <DataModelErd
                 v-else-if="activeView === 'diagram'"
-                :rows="tableRows"
+                :rows="diagramRows"
                 :framework-names="frameworkNames"
                 :selected-id="selectedFieldId"
                 @select="selectField"
@@ -120,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Card from 'primevue/card';
 import IconField from 'primevue/iconfield';
@@ -205,6 +205,12 @@ const visibleNodes = computed(() => filterTree(allNodes.value, searchQuery.value
 
 const tableRows = computed(() => buildTableRows(allNodes.value, dataPointTypes.value));
 const visibleRows = computed(() => filterTableRows(tableRows.value, searchQuery.value));
+
+// The diagram picker always contains the selected data point, even if the search would hide it.
+const diagramRows = computed(() => {
+  const selected = tableRows.value.find((row) => row.dataPointTypeId === selectedFieldId.value);
+  return selected && !visibleRows.value.includes(selected) ? [selected, ...visibleRows.value] : visibleRows.value;
+});
 
 const expandedKeys = ref<Record<string, boolean>>({});
 const selectionKeys = ref<Record<string, boolean>>({});
@@ -297,9 +303,23 @@ watch(searchQuery, (query) => {
 });
 
 /**
- * Switches between the tree and the table view and keeps the selected data point.
+ * Scrolls the selected tree node into view, so that the tree shows the same item as the table and the diagram.
+ */
+async function scrollSelectedNodeIntoView(): Promise<void> {
+  await nextTick();
+  document.querySelector('[data-test="data-model-tree"] .p-tree-node-selected')?.scrollIntoView({ block: 'nearest' });
+}
+onMounted(scrollSelectedNodeIntoView);
+watch([activeView, selectedFieldId], scrollSelectedNodeIntoView);
+
+/**
+ * Switches between the views and keeps the selected data point. A search that would hide the selected data point in
+ * the new view is cleared, so that all views show the same item.
  */
 async function selectView(view: DataModelView): Promise<void> {
+  if (selectedFieldId.value && !visibleRows.value.some((row) => row.dataPointTypeId === selectedFieldId.value)) {
+    searchQuery.value = '';
+  }
   await router.replace({ query: { ...route.query, view: view === 'tree' ? undefined : view } });
 }
 

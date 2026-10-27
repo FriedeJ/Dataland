@@ -23,14 +23,16 @@
       data-key="dataPointTypeId"
       selection-mode="single"
       :selection="selectedRow"
-      sort-field="baseName"
-      :sort-order="1"
+      v-model:sort-field="sortField"
+      v-model:sort-order="sortOrder"
+      v-model:first="first"
       size="small"
       scrollable
       :paginator="rows.length > 25"
       :rows="25"
       v-model:filters="filters"
       filter-display="menu"
+      ref="tableRef"
       data-test="data-model-table"
       @filter="onFilter"
       @row-select="(event) => emit('select', event.data.dataPointTypeId)"
@@ -171,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import Listbox from 'primevue/listbox';
 import Column from 'primevue/column';
@@ -246,6 +248,45 @@ function optionsFor(field: FilterableField): Array<string | number> {
     typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b))
   );
 }
+const sortField = ref<string>('baseName');
+const sortOrder = ref<number>(1);
+const first = ref(0);
+const PAGE_SIZE = 25;
+const tableRef = ref<{ $el: HTMLElement } | null>(null);
+
+/**
+ * Makes the selected data point visible: removes column filters that hide it, jumps to its page and scrolls to it.
+ * This keeps the selection in sync with the tree and the diagram.
+ */
+async function revealSelectedRow(): Promise<void> {
+  if (!props.selectedId || !props.rows.some((row) => row.dataPointTypeId === props.selectedId)) return;
+  if (!filteredRows.value.some((row) => row.dataPointTypeId === props.selectedId)) {
+    filterableFields.forEach((field) => {
+      filters.value[field].value = null;
+    });
+    filteredRows.value = props.rows;
+  }
+  await nextTick();
+  const findSelected = (): Element | null | undefined => tableRef.value?.$el.querySelector('.p-datatable-row-selected');
+  if (!findSelected()) {
+    const field = sortField.value as keyof DataModelTableRow;
+    const sorted = [...filteredRows.value].sort(
+      (a, b) =>
+        sortOrder.value *
+        (typeof a[field] === 'number' && typeof b[field] === 'number'
+          ? (a[field] as number) - (b[field] as number)
+          : String(a[field] ?? '').localeCompare(String(b[field] ?? '')))
+    );
+    const index = sorted.findIndex((row) => row.dataPointTypeId === props.selectedId);
+    if (index >= 0) first.value = Math.floor(index / PAGE_SIZE) * PAGE_SIZE;
+    await nextTick();
+  }
+  findSelected()?.scrollIntoView({ block: 'nearest' });
+}
+
+onMounted(revealSelectedRow);
+watch(() => [props.selectedId, props.rows], revealSelectedRow);
+
 const selectedRow = computed(() => props.rows.find((row) => row.dataPointTypeId === props.selectedId));
 </script>
 

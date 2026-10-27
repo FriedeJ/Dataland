@@ -247,6 +247,46 @@ describe('Component tests for the data model documentation page', () => {
     cy.get('[data-test="data-model-table"]').should('not.contain.text', 'Of which Enabling');
   });
 
+  it('Keeps the same data point selected when switching between tree, table and diagram', () => {
+    mountAt('/data-model/sfdr?field=extendedDecimalScope1').then((router) => {
+      cy.get('[data-test="data-model-tree"] .p-tree-node-selected').should('contain.text', 'Scope 1 GHG emissions');
+
+      cy.get('[data-test="data-model-view-switch"]').contains('Table').click();
+      cy.get('[data-test="data-model-table"] .p-datatable-row-selected').should(
+        'contain.text',
+        'Scope 1 GHG emissions'
+      );
+
+      cy.get('[data-test="data-model-view-switch"]').contains('Diagram').click();
+      cy.get('[data-test="erd-data-point-name"]').should('have.text', 'Scope 1 GHG emissions - Of which Enabling');
+
+      cy.get('[data-test="data-model-view-switch"]').contains('Tree').click();
+      cy.get('[data-test="data-model-tree"] .p-tree-node-selected').should('contain.text', 'Scope 1 GHG emissions');
+      cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDecimalScope1');
+    });
+  });
+
+  it('Clears a search that would hide the selected data point when switching views', () => {
+    mountAt('/data-model/sfdr?field=extendedDecimalScope1');
+    cy.get('[data-test="data-model-search"]').type('fiscal');
+    cy.get('[data-test="data-model-view-switch"]').contains('Table').click();
+    cy.get('[data-test="data-model-search"]').should('have.value', '');
+    cy.get('[data-test="data-model-table"] .p-datatable-row-selected').should('exist');
+  });
+
+  it('Removes table column filters that hide a data point selected elsewhere', () => {
+    mountAt('/data-model/sfdr?view=table');
+    cy.get('[data-test="data-model-table"] .p-datatable-column-filter-button').eq(2).click();
+    cy.get('[data-test="data-model-filter-categoryPath"]').contains('[role="option"]', 'General > Company').click();
+    cy.get('[data-test="data-model-table-count"]').should('contain.text', '1 of 2');
+    cy.get('[data-test="data-model-view-switch"]').contains('Diagram').click();
+    cy.get('[data-test="data-model-erd-select"]').click();
+    cy.contains('[role="option"]', 'Scope 1 GHG emissions').click();
+    cy.get('[data-test="data-model-view-switch"]').contains('Table').click();
+    cy.get('[data-test="data-model-table-count"]').should('contain.text', '2 of 2');
+    cy.get('[data-test="data-model-table"] .p-datatable-row-selected').should('contain.text', 'Scope 1 GHG emissions');
+  });
+
   it('Opens the table view from the URL and offers a CSV download', () => {
     mountAt('/data-model/sfdr?view=table');
     cy.get('[data-test="data-model-table-view"]').should('be.visible');
@@ -262,7 +302,6 @@ describe('Component tests for the data model documentation page', () => {
     mountAt('/data-model/sfdr?view=diagram').then((router) => {
       cy.get('[data-test="data-model-erd-view"]').should('be.visible');
       cy.get('[data-test="data-model-erd-hint"]').should('be.visible');
-      cy.get('[data-test="data-model-search"]').should('not.exist');
       cy.get('[data-test="erd-entity-framework"]').should('contain.text', 'Framework');
       cy.get('[data-test="erd-entity-data-point"]').should('contain.text', 'Data point');
       cy.get('[data-test="erd-entity-value-type"]').should('contain.text', 'Value type');
