@@ -359,6 +359,10 @@ async function onNodeSelect(node: TreeNode): Promise<void> {
 </script>
 
 <style scoped>
+/* PrimeFlex's .grid has a negative right margin that causes horizontal scrolling; other pages reset it as well. */
+.data-model-page {
+  margin-right: 0;
+}
 .data-model-page :deep(.col-12) {
   display: flex;
   flex-direction: column;
