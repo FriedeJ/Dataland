@@ -291,6 +291,12 @@ const selectedRow = computed(() => props.rows.find((row) => row.dataPointTypeId 
 </script>
 
 <style scoped>
+/* The Dataland theme's highlight colour is near-black; use the primary colour like the tree does. */
+:deep(.p-datatable-row-selected),
+:deep(.p-datatable-row-selected > td) {
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+}
 .data-model-table-toolbar {
   display: flex;
   align-items: center;
