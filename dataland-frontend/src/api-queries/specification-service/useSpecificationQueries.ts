@@ -116,3 +116,31 @@ export function useDataPointTypesQuery(
     return map;
   });
 }
+
+/**
+ * Loads several framework specifications in parallel, sharing the cache with {@link useFrameworkSpecificationQuery}.
+ * @param frameworkIds the (possibly reactive) ids of the frameworks to load
+ * @returns a computed map from framework id to its specification; frameworks that are not loaded yet are missing
+ */
+export function useFrameworkSpecificationsQuery(
+  frameworkIds: MaybeRefOrGetter<string[]>
+): ComputedRef<Record<string, FrameworkSpecification>> {
+  const apiClientProvider = useApiClient();
+  const results = useQueries({
+    queries: computed(() =>
+      toValue(frameworkIds).map((id) => ({
+        queryKey: specificationKeys.framework(id),
+        queryFn: async (): Promise<FrameworkSpecification> =>
+          (await apiClientProvider.apiClients.specificationController.getFrameworkSpecification(id)).data,
+        staleTime: STATIC_STALE_TIME_MS,
+      }))
+    ),
+  });
+  return computed(() => {
+    const map: Record<string, FrameworkSpecification> = {};
+    results.value.forEach((result) => {
+      if (result.data) map[result.data.framework.id] = result.data;
+    });
+    return map;
+  });
+}

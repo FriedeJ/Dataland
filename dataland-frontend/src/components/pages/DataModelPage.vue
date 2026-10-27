@@ -60,7 +60,7 @@
               data-test="data-model-view-switch"
               @update:model-value="selectView"
             />
-            <IconField class="data-model-search">
+            <IconField v-if="activeView !== 'diagram'" class="data-model-search">
               <InputIcon class="pi pi-search" />
               <InputText v-model="searchQuery" placeholder="Search data points" fluid data-test="data-model-search" />
             </IconField>
@@ -81,15 +81,13 @@
                   No data points match your search.
                 </p>
               </template>
-              <DataModelRelations
-                v-else-if="activeView === 'relations'"
-                :frameworks="frameworks"
-                :current-framework-id="frameworkId"
-                :all-rows="tableRows"
-                :rows="visibleRows"
-                :types="dataPointTypes"
+              <DataModelErd
+                v-else-if="activeView === 'diagram'"
+                :rows="tableRows"
+                :framework-names="frameworkNames"
                 :selected-id="selectedFieldId"
                 @select="selectField"
+                @select-framework="selectFrameworkKeepingField"
               />
               <DataModelTable
                 v-else-if="activeView === 'table'"
@@ -99,7 +97,7 @@
                 @download-csv="downloadCsv"
               />
             </div>
-            <div class="data-model-details-column">
+            <div v-if="activeView !== 'diagram'" class="data-model-details-column">
               <DataModelFieldDetails
                 v-if="selectedLeaf"
                 :key="selectedLeaf.dataPointTypeId"
@@ -108,6 +106,7 @@
                 :current-framework-id="frameworkId"
                 :framework-names="frameworkNames"
                 @select-framework="selectFrameworkKeepingField"
+                @select-field="selectField"
               />
               <p v-else class="data-model-hint" data-test="data-model-no-selection">
                 Select a data point to see its definition.
@@ -135,7 +134,7 @@ import Tree from 'primevue/tree';
 import type { TreeNode } from 'primevue/treenode';
 import TheContent from '@/components/generics/TheContent.vue';
 import MarginWrapper from '@/components/wrapper/MarginWrapper.vue';
-import DataModelRelations from '@/components/resources/dataModel/DataModelRelations.vue';
+import DataModelErd from '@/components/resources/dataModel/DataModelErd.vue';
 import DataModelTable from '@/components/resources/dataModel/DataModelTable.vue';
 import DataModelFieldDetails from '@/components/resources/dataModel/DataModelFieldDetails.vue';
 import {
@@ -163,14 +162,14 @@ const router = useRouter();
 const frameworkId = computed(() => (route.params.frameworkId as string | undefined) || undefined);
 const selectedFieldId = computed(() => (route.query.field as string | undefined) || undefined);
 
-type DataModelView = 'tree' | 'table' | 'relations';
+type DataModelView = 'tree' | 'table' | 'diagram';
 const viewOptions: { label: string; value: DataModelView }[] = [
   { label: 'Tree', value: 'tree' },
   { label: 'Table', value: 'table' },
-  { label: 'Relations', value: 'relations' },
+  { label: 'Diagram', value: 'diagram' },
 ];
 const activeView = computed<DataModelView>(() =>
-  ['table', 'relations'].includes(route.query.view as string) ? (route.query.view as DataModelView) : 'tree'
+  ['table', 'diagram'].includes(route.query.view as string) ? (route.query.view as DataModelView) : 'tree'
 );
 
 const frameworkListQuery = useFrameworkListQuery();

@@ -76,6 +76,7 @@ function interceptSpecificationService(): void {
     name: 'Scope 1 GHG emissions',
     businessDefinition: 'Direct emissions of greenhouse gases.',
     usedBy: [ref('frameworks', 'sfdr')],
+    calculationRules: [{ inputs: ['extendedDateFiscalYearEnd'], calculationMethod: 'Sum' }],
   }).as('scope1');
   cy.intercept('GET', '**/specifications/data-point-base-types/extendedDate', extendedDateBaseType).as('baseType');
 }
@@ -121,8 +122,12 @@ describe('Component tests for the data model documentation page', () => {
       cy.get('[data-test="data-model-tree"]').contains('Fiscal Year End').click();
       cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');
       cy.get('[data-test="data-model-field-definition"]').should('contain.text', 'The date the fiscal year ends.');
+      cy.get('[data-test="data-model-field-value-type"]').should('contain.text', 'Date');
+      cy.get('[data-test="data-model-field-constraints"]').should('contain.text', 'at least 0');
+      cy.get('[data-test="data-model-technical-details"]').should('not.exist');
+      cy.get('[data-test="data-model-toggle-technical"]').click();
+      cy.get('[data-test="data-model-field-id"]').should('have.text', 'extendedDateFiscalYearEnd');
       cy.get('[data-test="data-model-field-alias"]').should('contain.text', 'FISCAL_YEAR_END');
-      cy.get('[data-test="data-model-field-constraints"]').should('contain.text', 'min:0');
       cy.get('[data-test="data-model-field-base-type"]').should('contain.text', 'extendedDate');
       cy.get('[data-test="data-model-example"]').should('contain.text', 'value').and('contain.text', '2007-03-05');
       cy.get('[data-test="data-model-example"]').should('not.contain.text', '{');
@@ -133,7 +138,7 @@ describe('Component tests for the data model documentation page', () => {
   it('Restores the selected field from the URL and switches frameworks via the used-by links', () => {
     mountAt('/data-model/sfdr?field=extendedDateFiscalYearEnd').then((router) => {
       cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');
-      cy.get('[data-test="data-model-field-used-by"]').should('contain.text', 'Used by 2 framework(s)');
+      cy.get('[data-test="data-model-field-used-by"]').should('contain.text', 'Used in 2 frameworks');
       cy.get('[data-test="data-model-used-by-pcaf"]').click();
       cy.wrap(router.currentRoute).its('value.path').should('eq', '/data-model/pcaf');
       cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDateFiscalYearEnd');
@@ -193,7 +198,11 @@ describe('Component tests for the data model documentation page', () => {
 
       cy.get('[data-test="data-model-table"]').should('contain.text', 'Fiscal Year End');
       cy.get('[data-test="data-model-table"]').should('contain.text', 'General > Company');
-      cy.get('[data-test="data-model-table"]').should('contain.text', 'extendedDate');
+      cy.get('[data-test="data-model-table"]').should('contain.text', 'Date').and('contain.text', 'at least 0');
+      cy.get('[data-test="data-model-table"]').should('contain.text', '2 frameworks');
+      cy.get('[data-test="data-model-table"]').should('not.contain.text', 'FISCAL_YEAR_END');
+      cy.get('[data-test="data-model-toggle-technical-columns"]').click();
+      cy.get('[data-test="data-model-table"]').should('contain.text', 'FISCAL_YEAR_END');
       cy.get('[data-test="data-model-table"] tbody tr').should('have.length', 2);
 
       cy.get('[data-test="data-model-search"]').type('greenhouse');
@@ -224,36 +233,41 @@ describe('Component tests for the data model documentation page', () => {
     cy.get('@createObjectURL').should('have.been.calledOnce');
   });
 
-  it('Highlights the connections between frameworks, data points and data formats in the relations view', () => {
-    mountAt('/data-model/sfdr?view=relations').then((router) => {
-      cy.get('[data-test="data-model-relations-view"]').should('be.visible');
-      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'none');
-      cy.get('[data-test="relations-base-extendedDate"]').should('contain.text', '2 data points');
+  it('Shows the entity relationship diagram and fills it with the real values of a data point', () => {
+    mountAt('/data-model/sfdr?view=diagram').then((router) => {
+      cy.get('[data-test="data-model-erd-view"]').should('be.visible');
+      cy.get('[data-test="data-model-erd-hint"]').should('be.visible');
+      cy.get('[data-test="data-model-search"]').should('not.exist');
+      cy.get('[data-test="erd-entity-framework"]').should('contain.text', 'Framework');
+      cy.get('[data-test="erd-entity-data-point"]').should('contain.text', 'Data point');
+      cy.get('[data-test="erd-entity-value-type"]').should('contain.text', 'Value type');
 
-      cy.get('[data-test="relations-framework-pcaf"]').click();
-      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'focused');
-      cy.get('[data-test="relations-type-extendedDateFiscalYearEnd"]').should('have.attr', 'data-state', 'connected');
-      cy.get('[data-test="relations-type-extendedDecimalScope1"]').should('have.attr', 'data-state', 'dimmed');
-      cy.get('[data-test="relations-base-extendedDate"]').should('have.attr', 'data-state', 'connected');
+      cy.get('[data-test="data-model-erd-select"]').click();
+      cy.contains('[role="option"]', 'Fiscal Year End').click();
+      cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDateFiscalYearEnd');
+      cy.get('[data-test="erd-data-point-name"]').should('have.text', 'Fiscal Year End');
+      cy.get('[data-test="erd-value-type-name"]').should('have.text', 'Date');
+      cy.get('[data-test="erd-framework-sfdr"]').should('be.visible');
+      cy.get('[data-test="erd-framework-pcaf"]').should('be.visible');
+      cy.get('[data-test="erd-entity-framework"]')
+        .should('contain.text', 'General > Company')
+        .and('contain.text', 'FISCAL_YEAR_END');
+      cy.get('[data-test="erd-no-calculation"]').should('be.visible');
 
-      cy.get('[data-test="relations-type-extendedDecimalScope1"]').click();
-      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'dimmed');
-      cy.get('[data-test="relations-framework-sfdr"]').should('have.attr', 'data-state', 'connected');
-      cy.get('[data-test="data-model-field-name"]').should('have.text', 'Scope 1 GHG emissions');
-      cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDecimalScope1');
-
-      cy.get('[data-test="relations-base-extendedDate"]').click();
-      cy.get('[data-test="relations-type-extendedDateFiscalYearEnd"]').should('have.attr', 'data-state', 'connected');
-      cy.get('[data-test="relations-type-extendedDecimalScope1"]').should('have.attr', 'data-state', 'connected');
-      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'connected');
+      cy.get('[data-test="erd-framework-pcaf"]').click();
+      cy.wrap(router.currentRoute).its('value.path').should('eq', '/data-model/pcaf');
+      cy.wrap(router.currentRoute).its('value.query.view').should('eq', 'diagram');
     });
   });
 
-  it('Filters the data points of the relations view with the shared search', () => {
-    mountAt('/data-model/sfdr?view=relations');
-    cy.get('[data-test="data-model-search"]').type('greenhouse');
-    cy.get('[data-test="relations-type-extendedDecimalScope1"]').should('exist');
-    cy.get('[data-test="relations-type-extendedDateFiscalYearEnd"]').should('not.exist');
+  it('Shows the calculation inputs in the diagram and navigates to them', () => {
+    mountAt('/data-model/sfdr?view=diagram&field=extendedDecimalScope1').then((router) => {
+      cy.get('[data-test="erd-entity-calculation"]').should('contain.text', 'Sum of');
+      cy.get('[data-test="erd-calculation-input-extendedDateFiscalYearEnd"]')
+        .should('have.text', 'Fiscal Year End')
+        .click();
+      cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDateFiscalYearEnd');
+    });
   });
 
   it('Shows an error message if the framework cannot be loaded', () => {

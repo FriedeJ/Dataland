@@ -198,7 +198,9 @@ export interface DataModelTableRow {
   categoryPath: string;
   aliasExport: string;
   baseTypeId: string;
+  valueType: string;
   constraints: string;
+  allowedValues: string;
   usedByCount: number | undefined;
   searchText: string;
 }
@@ -226,11 +228,20 @@ export function buildTableRows(
           categoryPath: trail.join(' > '),
           aliasExport: leaf.aliasExport ?? '',
           baseTypeId: spec?.dataPointBaseType.id ?? '',
+          valueType: spec ? friendlyValueType(spec.dataPointBaseType.id) : '',
           constraints: spec?.constraints?.join(', ') ?? '',
+          allowedValues: friendlyConstraints(spec?.constraints),
           usedByCount: spec?.usedBy.length,
           searchText: '',
         };
-        row.searchText = [row.name, row.categoryPath, row.aliasExport, row.dataPointTypeId, spec?.businessDefinition]
+        row.searchText = [
+          row.name,
+          row.categoryPath,
+          row.valueType,
+          row.aliasExport,
+          row.dataPointTypeId,
+          spec?.businessDefinition,
+        ]
           .filter(Boolean)
           .join(' ')
           .toLowerCase();
@@ -256,6 +267,7 @@ export function filterTableRows(rows: DataModelTableRow[], query: string): DataM
 }
 
 const CSV_HEADER = ['Name', 'Category', 'Data point type', 'Export alias', 'Data format', 'Constraints', 'Used by'];
+// The CSV export intentionally keeps the technical columns, they are the ones developers need.
 
 /**
  * Serializes table rows to RFC 4180 compliant CSV.
@@ -275,43 +287,88 @@ export function tableRowsToCsv(rows: DataModelTableRow[]): string {
   return [CSV_HEADER.join(','), ...lines].join('\n');
 }
 
-export type RelationFocus = { kind: 'framework' | 'type' | 'base'; id: string };
+const VALUE_TYPE_RULES: Array<[RegExp, string]> = [
+  [/^extendedCurrency/, 'Currency amount'],
+  [/^extendedDecimal/, 'Number'],
+  [/^extendedInteger/, 'Whole number'],
+  [/^(extended|plain)Date/, 'Date'],
+  [/^extendedEnumYesNoNa$/, 'Yes / No / N/A'],
+  [/^extendedEnumYesNo$/, 'Yes / No'],
+  [/(Activities|Denominator|Numerator|Aligned|Eligible)Component$/, 'Activity breakdown'],
+  [/Enum|Sectors$/, 'Selection from a list'],
+];
 
-export interface RelationHighlights {
-  frameworks: Set<string>;
-  types: Set<string>;
-  bases: Set<string>;
+/**
+ * Translates the technical id of a data point base type into a name that business users understand.
+ * Unknown ids fall back to a humanized version of the id.
+ * @param baseTypeId the id of the data point base type, e.g. `extendedDecimal`
+ * @returns a readable value type, e.g. `Number`
+ */
+export function friendlyValueType(baseTypeId: string): string {
+  return VALUE_TYPE_RULES.find(([pattern]) => pattern.test(baseTypeId))?.[1] ?? humanizeKey(baseTypeId);
 }
 
 /**
- * Computes which items of the three relation columns are connected to the focused item.
- * The chain is framework -> data point type -> base type; `usedBy` of a type links back to the frameworks.
- * @param focus the focused item, or undefined if nothing is focused
- * @param types map from data point type id to its specification (only types of the current framework)
- * @returns the connected ids per column, or undefined if nothing is focused
+ * Translates technical constraints such as `between:0,100` or `min:0` into readable text.
+ * @param constraints the constraints of a data point type
+ * @returns readable text, or an empty string if there are no constraints
  */
-export function computeRelationHighlights(
-  focus: RelationFocus | undefined,
-  types: Record<string, DataPointTypeSpecification>
-): RelationHighlights | undefined {
-  if (!focus) return undefined;
-  const result: RelationHighlights = { frameworks: new Set(), types: new Set(), bases: new Set() };
-  Object.values(types).forEach((type) => {
-    const typeId = type.dataPointType.id;
-    const baseId = type.dataPointBaseType.id;
-    const frameworkIds = type.usedBy.map((framework) => framework.id);
-    const connected =
-      (focus.kind === 'type' && typeId === focus.id) ||
-      (focus.kind === 'base' && baseId === focus.id) ||
-      (focus.kind === 'framework' && frameworkIds.includes(focus.id));
-    if (connected) {
-      result.types.add(typeId);
-      result.bases.add(baseId);
-      frameworkIds.forEach((id) => result.frameworks.add(id));
+export function friendlyConstraints(constraints: string[] | undefined): string {
+  return (constraints ?? [])
+    .map((constraint) => {
+      const [kind, argument = ''] = constraint.split(':');
+      if (kind === 'between') return argument.split(',').join(' – ');
+      if (kind === 'min') return `at least ${argument}`;
+      if (kind === 'max') return `at most ${argument}`;
+      return constraint;
+    })
+    .join(', ');
+}
+
+const CALCULATION_METHODS: Record<string, string> = {
+  Identity: 'Same value as',
+  Sum: 'Sum of',
+  Subtraction: 'Difference of',
+  MultiplicationByPercent: 'Multiplication by a percentage of',
+  MultiplicationByComplementPercent: 'Multiplication by the complement of a percentage of',
+  MultiplicationByPercentMinusCurrency: 'Multiplication by a percentage, minus a currency amount, of',
+  DivisionByPercent: 'Division by a percentage of',
+  ComplementToPercent: 'Complement to 100 % of',
+  EuTaxonomyShare: 'EU Taxonomy share derived from',
+  EuTaxonomyActivityMerge: 'EU Taxonomy activities merged from',
+};
+
+/**
+ * Translates the name of a calculation method into a readable phrase.
+ * @param method the calculation method, e.g. `Sum`
+ * @returns a readable phrase that can be followed by the input names
+ */
+export function friendlyCalculationMethod(method: string): string {
+  return CALCULATION_METHODS[method] ?? `${humanizeKey(method)} of`;
+}
+
+export interface DataPointPlacement {
+  categoryPath: string;
+  aliasExport: string;
+}
+
+/**
+ * Finds where a data point type is placed in a framework tree.
+ * @param nodes the tree nodes of the framework
+ * @param dataPointTypeId the data point type to look for
+ * @returns the category path and export alias, or undefined if the framework does not contain the type
+ */
+export function findPlacement(nodes: TreeNode[], dataPointTypeId: string): DataPointPlacement | undefined {
+  const visit = (current: TreeNode[], trail: string[]): DataPointPlacement | undefined => {
+    for (const node of current) {
+      const leaf = (node.data as DataModelNodeData).leaf;
+      if (node.leaf && leaf?.dataPointTypeId === dataPointTypeId) {
+        return { categoryPath: trail.join(' > '), aliasExport: leaf.aliasExport ?? '' };
+      }
+      const found = node.leaf ? undefined : visit(node.children ?? [], [...trail, node.label ?? '']);
+      if (found) return found;
     }
-  });
-  if (focus.kind === 'framework') result.frameworks = new Set([focus.id]);
-  if (focus.kind === 'base') result.bases = new Set([focus.id]);
-  if (focus.kind === 'type') result.types = new Set([focus.id]);
-  return result;
+    return undefined;
+  };
+  return visit(nodes, []);
 }
