@@ -222,6 +222,20 @@ describe('Component tests for the data model documentation page', () => {
     });
   });
 
+  it('Filters the table with Excel-like column filters', () => {
+    mountAt('/data-model/sfdr?view=table');
+    cy.get('[data-test="data-model-table-count"]').should('contain.text', '2 of 2');
+    cy.get('[data-test="data-model-table"] .p-datatable-column-filter-button').eq(0).click();
+    cy.get('[data-test="data-model-filter-categoryPath"]')
+      .contains('[role="option"]', 'Environmental > Emissions')
+      .click();
+    cy.get('.p-datatable-filter-overlay').contains('button', 'Apply').click();
+    cy.get('[data-test="data-model-table-count"]').should('contain.text', '1 of 2');
+    cy.get('[data-test="data-model-table"] tbody tr').should('have.length', 1);
+    cy.get('[data-test="data-model-table"]').should('contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-table"]').should('not.contain.text', 'Fiscal Year End');
+  });
+
   it('Opens the table view from the URL and offers a CSV download', () => {
     mountAt('/data-model/sfdr?view=table');
     cy.get('[data-test="data-model-table-view"]').should('be.visible');

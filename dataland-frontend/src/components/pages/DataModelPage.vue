@@ -153,6 +153,7 @@ import {
   filterTree,
   parseFrameworkSchema,
   type DataModelLeafData,
+  type DataModelTableRow,
   type DataModelNodeData,
 } from '@/utils/DataModelUtils.ts';
 
@@ -312,8 +313,8 @@ async function selectField(dataPointTypeId: string): Promise<void> {
 /**
  * Downloads the currently visible table rows as CSV file.
  */
-function downloadCsv(): void {
-  const blob = new Blob([tableRowsToCsv(visibleRows.value)], { type: 'text/csv;charset=utf-8' });
+function downloadCsv(rows: DataModelTableRow[] = visibleRows.value): void {
+  const blob = new Blob([tableRowsToCsv(rows)], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
