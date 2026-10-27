@@ -49,18 +49,25 @@ format, plus hints and links elsewhere in the frontend that make users aware of 
 - [x] Component tests (page, dataset view button, field link, cockpit hint)
 - [x] E2E test `tests/e2e/specs/data-model/` (registered in test group 1)
 
-### Phase 5 - Stretch
+### Phase 5 - Stretch  [done except mobile polish]
 - [x] Real data point names in the tree (fetched in parallel, cached) and search by name and business definition
 - [x] Tree collapsed by default, expansion state preserved while browsing
-- [x] Example shown as table instead of raw JSON
-- [x] Table view (business columns by default, technical columns on demand, CSV download) and an entity relationship
-      diagram (framework n:m data point n:1 value type, data point calculated from data points) next to the tree,
-      switchable on the same page via `?view=`
-- [x] Business-friendly value types and allowed values (`friendlyValueType`, `friendlyConstraints`); technical details
-      are collapsed in the details panel
-- [ ] Type column in the example table (needs a backend change)
-- [ ] Example download code, links to example datasets
-- [ ] Mobile polish (basic stacked layout exists)
+- [x] Example shown as a table (field, type, value) instead of raw JSON
+- [x] Table view with business columns by default (technical columns on demand), Excel-like column filters that apply
+      immediately, names split into data point and detail, CSV download of the filtered rows
+- [x] Entity relationship diagram (framework n:m data point n:1 value type, calculation self-relation)
+- [x] Tree, table and diagram share one URL state: the selected data point is highlighted, scrolled to and (for the
+      table) un-filtered and paged to in every view; a search that would hide it is cleared on view switch
+- [x] Business-friendly value types and allowed values; technical details collapsed
+- [x] Type column in the example table: `schema` added to the base type DTO of the specification service
+      (spec regenerated, client regenerated, controller test added)
+- [x] Example datasets (via the viewable-dimensions search, so permissions are respected) and Python/curl code to
+      download a company's datasets of a framework
+- [ ] Mobile polish (basic stacked layout exists, skipped for now)
+
+### Agentic workflow assets
+- [x] Skills: `create-cypress-test`, `visual-check-with-playwright` (`.opencode/skills/`)
+- [x] Command: `/data-model-check` (`.opencode/commands/`)
 
 ## Verification (frontend)
 `npm run lintci`, `npm run formatci`, `npm run typecheck`, `npm run checkcypresscompilation`,
@@ -68,4 +75,6 @@ format, plus hints and links elsewhere in the frontend that make users aware of 
 
 ## Notes
 - `origin` currently points to `d-fine/Dataland`. Fork before pushing.
+- Backend verification: `./gradlew :dataland-specification-service:test`, `ktlintCheck`, `detekt`; run `generateOpenApiDocs`
+  separately from `test` (Gradle task-ordering validation fails when combined).
 - The theme's `highlight` colours are dark on dark, so selected tree nodes need a scoped override (done in the page).

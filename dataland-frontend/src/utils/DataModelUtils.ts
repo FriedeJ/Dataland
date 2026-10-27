@@ -415,3 +415,37 @@ export function findPlacement(nodes: TreeNode[], dataPointTypeId: string): DataP
   };
   return visit(nodes, []);
 }
+
+export type SnippetLanguage = 'python' | 'curl';
+
+/**
+ * Builds a code snippet that downloads the datasets of a company for a framework through the Dataland API.
+ * @param language the language of the snippet
+ * @param baseUrl the base URL of the Dataland instance
+ * @param frameworkId the framework (data type) of the dataset
+ * @param companyId the id of the company whose datasets are downloaded
+ * @returns the code snippet
+ */
+export function buildDownloadSnippet(
+  language: SnippetLanguage,
+  baseUrl: string,
+  frameworkId: string,
+  companyId: string
+): string {
+  const url = `${baseUrl}/api/data/${frameworkId}/companies/${companyId}`;
+  if (language === 'curl') {
+    return `curl -H "Authorization: Bearer $DATALAND_API_KEY" \\\n  "${url}"`;
+  }
+  return [
+    'import os',
+    'import requests',
+    '',
+    `response = requests.get(`,
+    `    "${url}",`,
+    '    headers={"Authorization": f"Bearer {os.environ[\'DATALAND_API_KEY\']}"},',
+    ')',
+    'response.raise_for_status()',
+    'datasets = response.json()',
+    'print(datasets)',
+  ].join('\n');
+}

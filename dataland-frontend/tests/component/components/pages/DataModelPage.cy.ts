@@ -291,6 +291,24 @@ describe('Component tests for the data model documentation page', () => {
     cy.get('[data-test="data-model-table"] .p-datatable-row-selected').should('contain.text', 'Scope 1 GHG emissions');
   });
 
+  it('Shows example datasets and API download code for the framework', () => {
+    cy.intercept('POST', '**/api/data-availability/viewable-dimensions/search', [
+      { companyId: 'company-1', dataType: 'sfdr', reportingPeriod: '2023' },
+    ]).as('dimensions');
+    cy.intercept('GET', '**/api/companies/company-1/info', { companyName: 'Example Corp' }).as('companyInfo');
+    mountAt('/data-model/sfdr');
+    cy.get('[data-test="data-model-code-snippet"]').should('not.exist');
+    cy.get('[data-test="data-model-usage-toggle"]').click();
+    cy.get('[data-test="data-model-example-dataset-company-1"]')
+      .should('contain.text', 'Example Corp (2023)')
+      .and('have.attr', 'href', '/companies/company-1/frameworks/sfdr');
+    cy.get('[data-test="data-model-code-snippet"]')
+      .should('contain.text', '/api/data/sfdr/companies/company-1')
+      .and('contain.text', 'requests.get');
+    cy.get('[data-test="data-model-code-language"]').contains('curl').click();
+    cy.get('[data-test="data-model-code-snippet"]').should('contain.text', 'curl -H "Authorization: Bearer');
+  });
+
   it('Opens the table view from the URL and offers a CSV download', () => {
     mountAt('/data-model/sfdr?view=table');
     cy.get('[data-test="data-model-table-view"]').should('be.visible');

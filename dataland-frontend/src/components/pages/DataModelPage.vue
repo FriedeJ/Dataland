@@ -49,6 +49,7 @@
             <p>{{ frameworkSpec.businessDefinition }}</p>
             <small>{{ dataPointCount }} {{ dataPointCount === 1 ? 'data point' : 'data points' }}</small>
           </div>
+          <DataModelUsage :framework-id="frameworkSpec.framework.id" />
 
           <div class="data-model-toolbar">
             <SelectButton
@@ -135,6 +136,7 @@ import type { TreeNode } from 'primevue/treenode';
 import TheContent from '@/components/generics/TheContent.vue';
 import MarginWrapper from '@/components/wrapper/MarginWrapper.vue';
 import DataModelErd from '@/components/resources/dataModel/DataModelErd.vue';
+import DataModelUsage from '@/components/resources/dataModel/DataModelUsage.vue';
 import DataModelTable from '@/components/resources/dataModel/DataModelTable.vue';
 import DataModelFieldDetails from '@/components/resources/dataModel/DataModelFieldDetails.vue';
 import {

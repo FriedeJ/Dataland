@@ -55,5 +55,13 @@ describeIf(
       cy.get('[data-test="erd-data-point-name"]').should('have.text', 'Fiscal Year End');
       cy.get('[data-test="erd-framework-pcaf"]').should('be.visible');
     });
+
+    it('Offers example datasets and API download code for a framework', () => {
+      cy.visitAndCheckAppMount('/data-model/eutaxonomy-financials');
+      cy.get('[data-test="data-model-usage-toggle"]').click();
+      cy.get('[data-test="data-model-code-snippet"]').should('contain.text', '/api/data/eutaxonomy-financials/companies/');
+      cy.get('[data-test^="data-model-example-dataset-"]').first().click();
+      cy.url().should('include', '/frameworks/eutaxonomy-financials');
+    });
   }
 );
