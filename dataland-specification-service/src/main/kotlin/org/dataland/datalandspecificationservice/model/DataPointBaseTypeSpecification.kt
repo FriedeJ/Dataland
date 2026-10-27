@@ -25,6 +25,7 @@ fun DataPointBaseType.toDto(
         name = this.name,
         businessDefinition = this.businessDefinition,
         validatedBy = this.validatedBy,
+        schema = this.schema,
         example = this.example,
         usedBy =
             database.dataPointTypes.values
@@ -41,6 +42,7 @@ data class DataPointBaseTypeSpecification(
     val name: String,
     val businessDefinition: String,
     val validatedBy: String,
+    val schema: JsonNode,
     val example: JsonNode,
     val usedBy: List<IdWithRef>,
 )

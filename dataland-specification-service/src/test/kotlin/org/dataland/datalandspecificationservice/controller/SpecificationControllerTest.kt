@@ -61,6 +61,13 @@ class SpecificationControllerTest(
     }
 
     @Test
+    fun `retrieving a data point base type specification should include its schema`() {
+        val response = specificationController.getDataPointBaseType("test-datapoint-base-type")
+        assert(response.statusCode.is2xxSuccessful)
+        assert(!response.body!!.schema.isMissingNode)
+    }
+
+    @Test
     fun `retrieving a non existing framework specification should return 404`() {
         assertThrows<ResourceNotFoundApiException> {
             specificationController.getFrameworkSpecification("non-existing-framework")

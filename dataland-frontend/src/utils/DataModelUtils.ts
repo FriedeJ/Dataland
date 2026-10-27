@@ -132,8 +132,31 @@ export function filterTree(nodes: TreeNode[], query: string, typeNames: Record<s
     .filter((node): node is TreeNode => node !== undefined && (node.leaf || (node.children?.length ?? 0) > 0));
 }
 
+const FIELD_TYPES: Record<string, string> = {
+  String: 'Text',
+  LocalDate: 'Date',
+  BigDecimal: 'Number',
+  Long: 'Whole number',
+  Int: 'Whole number',
+  Boolean: 'True / False',
+  QualityOptions: 'Quality (selection)',
+  YesNo: 'Yes / No',
+  YesNoNa: 'Yes / No / N/A',
+  CurrencyCode: 'Currency code',
+};
+
+/**
+ * Translates the type name from a base type schema (e.g. `LocalDate`) into a readable name.
+ * @param type the type entry of the schema
+ * @returns the readable type, or an en dash if the schema has no simple type for the field
+ */
+export function friendlyFieldType(type: unknown): string {
+  return typeof type === 'string' ? (FIELD_TYPES[type] ?? type) : '–';
+}
+
 export interface ExampleRow {
   field: string;
+  type: string;
   value: string;
 }
 
@@ -144,17 +167,21 @@ export interface ExampleRow {
  * @param prefix the path prefix of the current nesting level
  * @returns the flattened rows in the original order
  */
-export function flattenExample(example: unknown, prefix = ''): ExampleRow[] {
+export function flattenExample(example: unknown, schema?: unknown, prefix = ''): ExampleRow[] {
+  const typeAt = (key?: string): unknown =>
+    typeof schema === 'object' && schema !== null && key !== undefined
+      ? (schema as Record<string, unknown>)[key]
+      : undefined;
   if (typeof example !== 'object' || example === null) {
-    return [{ field: prefix, value: String(example) }];
+    return [{ field: prefix, type: friendlyFieldType(schema), value: String(example) }];
   }
   return Object.entries(example).flatMap(([key, value]) => {
     const path = prefix ? `${prefix}.${key}` : key;
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      return flattenExample(value, path);
+      return flattenExample(value, typeAt(key), path);
     }
     const isEmpty = value === null || value === undefined || value === '';
-    return [{ field: path, value: isEmpty ? '–' : String(value) }];
+    return [{ field: path, type: friendlyFieldType(typeAt(key)), value: isEmpty ? '–' : String(value) }];
   });
 }
 

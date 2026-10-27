@@ -754,6 +754,7 @@
           "dataPointBaseType",
           "example",
           "name",
+          "schema",
           "usedBy",
           "validatedBy"
         ],
@@ -770,6 +771,9 @@
           },
           "validatedBy": {
             "type": "string"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/JsonNode"
           },
           "example": {
             "$ref": "#/components/schemas/JsonNode"

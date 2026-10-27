@@ -89,6 +89,7 @@
                   <code>{{ data.field }}</code>
                 </template>
               </Column>
+              <Column field="type" header="Type" />
               <Column field="value" header="Example value" body-class="data-model-example-value" />
             </DataTable>
           </template>
@@ -135,7 +136,7 @@ const typeQuery = useDataPointTypeQuery(() => props.dataPointTypeId);
 const typeSpec = computed(() => typeQuery.data.value);
 const baseTypeQuery = useDataPointBaseTypeQuery(() => typeSpec.value?.dataPointBaseType.id);
 const baseTypeSpec = computed(() => baseTypeQuery.data.value);
-const exampleRows = computed(() => flattenExample(baseTypeSpec.value?.example));
+const exampleRows = computed(() => flattenExample(baseTypeSpec.value?.example, baseTypeSpec.value?.schema));
 const allowedValues = computed(() => friendlyConstraints(typeSpec.value?.constraints));
 
 const calculationInputIds = computed(() => typeSpec.value?.calculationRules.flatMap((rule) => rule.inputs) ?? []);
