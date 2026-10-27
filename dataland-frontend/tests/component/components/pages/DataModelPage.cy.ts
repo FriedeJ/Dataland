@@ -73,7 +73,7 @@ function interceptSpecificationService(): void {
   cy.intercept('GET', '**/specifications/data-point-types/extendedDecimalScope1', {
     ...fiscalYearEndType,
     dataPointType: ref('data-point-types', 'extendedDecimalScope1'),
-    name: 'Scope 1 GHG emissions',
+    name: 'Scope 1 GHG emissions - Of which Enabling',
     businessDefinition: 'Direct emissions of greenhouse gases.',
     usedBy: [ref('frameworks', 'sfdr')],
     calculationRules: [{ inputs: ['extendedDateFiscalYearEnd'], calculationMethod: 'Sum' }],
@@ -149,12 +149,12 @@ describe('Component tests for the data model documentation page', () => {
 
   it('Filters the tree with the search field', () => {
     mountAt('/data-model/sfdr');
-    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope 1 GHG emissions - Of which Enabling');
     cy.get('[data-test="data-model-search"]').type('scope1');
-    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions - Of which Enabling');
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Fiscal Year End');
     cy.get('[data-test="data-model-search"]').clear();
-    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope 1 GHG emissions - Of which Enabling');
     cy.get('[data-test="data-model-search"]').type('fiscal');
     cy.get('[data-test="data-model-tree"]').should('contain.text', 'Fiscal Year End');
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope1');
@@ -169,24 +169,24 @@ describe('Component tests for the data model documentation page', () => {
 
     cy.get('[data-test="data-model-tree"]').contains('Environmental').click();
     cy.get('[data-test="data-model-tree"]').contains('Emissions').click();
-    cy.get('[data-test="data-model-tree"]').contains('Scope 1 GHG emissions').click();
-    cy.get('[data-test="data-model-field-name"]').should('have.text', 'Scope 1 GHG emissions');
-    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').contains('Scope 1 GHG emissions - Of which Enabling').click();
+    cy.get('[data-test="data-model-field-name"]').should('have.text', 'Scope 1 GHG emissions - Of which Enabling');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions - Of which Enabling');
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Company');
   });
 
   it('Opens only the path to the selected data point when loading a deep link', () => {
     mountAt('/data-model/sfdr?field=extendedDecimalScope1');
-    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions - Of which Enabling');
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Company');
   });
 
   it('Shows the real data point names in the tree and finds data points by their business definition', () => {
     mountAt('/data-model/sfdr?field=extendedDecimalScope1');
-    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions - Of which Enabling');
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Scope1 Ghg Emissions');
     cy.get('[data-test="data-model-search"]').type('greenhouse gases');
-    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions');
+    cy.get('[data-test="data-model-tree"]').should('contain.text', 'Scope 1 GHG emissions - Of which Enabling');
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Fiscal Year End');
   });
 
@@ -225,7 +225,7 @@ describe('Component tests for the data model documentation page', () => {
   it('Filters the table with Excel-like column filters', () => {
     mountAt('/data-model/sfdr?view=table');
     cy.get('[data-test="data-model-table-count"]').should('contain.text', '2 of 2');
-    cy.get('[data-test="data-model-table"] .p-datatable-column-filter-button').eq(0).click();
+    cy.get('[data-test="data-model-table"] .p-datatable-column-filter-button').eq(2).click();
     cy.get('[data-test="data-model-filter-categoryPath"]')
       .contains('[role="option"]', 'Environmental > Emissions')
       .click();
@@ -234,6 +234,17 @@ describe('Component tests for the data model documentation page', () => {
     cy.get('[data-test="data-model-table"] tbody tr').should('have.length', 1);
     cy.get('[data-test="data-model-table"]').should('contain.text', 'Scope 1 GHG emissions');
     cy.get('[data-test="data-model-table"]').should('not.contain.text', 'Fiscal Year End');
+  });
+
+  it('Splits hierarchical names into data point and detail and filters by them', () => {
+    mountAt('/data-model/sfdr?view=table');
+    cy.get('[data-test="data-model-table"]')
+      .should('contain.text', 'Scope 1 GHG emissions')
+      .and('contain.text', 'Of which Enabling');
+    cy.get('[data-test="data-model-table"] .p-datatable-column-filter-button').eq(0).click();
+    cy.get('[data-test="data-model-filter-baseName"]').contains('[role="option"]', 'Fiscal Year End').click();
+    cy.get('[data-test="data-model-table-count"]').should('contain.text', '1 of 2');
+    cy.get('[data-test="data-model-table"]').should('not.contain.text', 'Of which Enabling');
   });
 
   it('Opens the table view from the URL and offers a CSV download', () => {

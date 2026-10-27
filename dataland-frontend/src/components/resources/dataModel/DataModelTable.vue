@@ -23,7 +23,7 @@
       data-key="dataPointTypeId"
       selection-mode="single"
       :selection="selectedRow"
-      sort-field="name"
+      sort-field="baseName"
       :sort-order="1"
       size="small"
       scrollable
@@ -35,7 +35,37 @@
       @filter="onFilter"
       @row-select="(event) => emit('select', event.data.dataPointTypeId)"
     >
-      <Column field="name" header="Name" sortable />
+      <Column field="baseName" header="Data point" sortable :show-filter-match-modes="false" :show-apply-button="false">
+        <template #filter="{ filterModel, filterCallback }">
+          <Listbox
+            v-model="filterModel.value"
+            @change="filterCallback()"
+            :options="optionsFor('baseName')"
+            multiple
+            checkbox
+            filter
+            class="data-model-filter-list"
+            list-style="max-height: 14rem"
+            data-test="data-model-filter-baseName"
+          />
+        </template>
+      </Column>
+      <Column field="detail" header="Detail" sortable :show-filter-match-modes="false" :show-apply-button="false">
+        <template #body="{ data }">{{ data.detail || '–' }}</template>
+        <template #filter="{ filterModel, filterCallback }">
+          <Listbox
+            v-model="filterModel.value"
+            @change="filterCallback()"
+            :options="optionsFor('detail')"
+            multiple
+            checkbox
+            filter
+            class="data-model-filter-list"
+            list-style="max-height: 14rem"
+            data-test="data-model-filter-detail"
+          />
+        </template>
+      </Column>
       <Column
         field="categoryPath"
         header="Category"
@@ -164,8 +194,15 @@ const emit = defineEmits<{
 
 const showTechnical = ref(false);
 
-type FilterableField = 'categoryPath' | 'valueType' | 'allowedValues' | 'usedByCount';
-const filterableFields: FilterableField[] = ['categoryPath', 'valueType', 'allowedValues', 'usedByCount'];
+type FilterableField = 'baseName' | 'detail' | 'categoryPath' | 'valueType' | 'allowedValues' | 'usedByCount';
+const filterableFields: FilterableField[] = [
+  'baseName',
+  'detail',
+  'categoryPath',
+  'valueType',
+  'allowedValues',
+  'usedByCount',
+];
 const filters = ref(
   Object.fromEntries(filterableFields.map((field) => [field, { value: null, matchMode: FilterMatchMode.IN }]))
 );

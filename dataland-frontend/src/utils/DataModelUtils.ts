@@ -195,6 +195,8 @@ export function applyDataPointNames(nodes: TreeNode[], names: Record<string, str
 export interface DataModelTableRow {
   dataPointTypeId: string;
   name: string;
+  baseName: string;
+  detail: string;
   categoryPath: string;
   aliasExport: string;
   baseTypeId: string;
@@ -225,6 +227,7 @@ export function buildTableRows(
         const row = {
           dataPointTypeId: leaf.dataPointTypeId,
           name: node.label ?? leaf.dataPointTypeId,
+          ...splitDataPointName(node.label ?? leaf.dataPointTypeId),
           categoryPath: trail.join(' > '),
           aliasExport: leaf.aliasExport ?? '',
           baseTypeId: spec?.dataPointBaseType.id ?? '',
@@ -285,6 +288,19 @@ export function tableRowsToCsv(rows: DataModelTableRow[]): string {
       .join(',')
   );
   return [CSV_HEADER.join(','), ...lines].join('\n');
+}
+
+/**
+ * Splits a data point name of the form `Parent - Detail` into its two levels.
+ * Names without the separator have no detail.
+ * @param name the full data point name
+ * @returns the part before the separator and the part after it
+ */
+export function splitDataPointName(name: string): { baseName: string; detail: string } {
+  const index = name.lastIndexOf(' - ');
+  return index < 0
+    ? { baseName: name, detail: '' }
+    : { baseName: name.slice(0, index).trim(), detail: name.slice(index + 3).trim() };
 }
 
 const VALUE_TYPE_RULES: Array<[RegExp, string]> = [
