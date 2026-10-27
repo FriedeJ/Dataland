@@ -18,6 +18,21 @@
         />
       </div>
     </div>
+    <Message
+      v-if="selectedHiddenByFilters"
+      severity="info"
+      class="data-model-hidden-hint"
+      data-test="data-model-hidden-selection"
+    >
+      The selected data point is hidden by the column filters.
+      <PrimeButton
+        label="SHOW IT"
+        variant="link"
+        size="small"
+        data-test="data-model-show-hidden-selection"
+        @click="clearFilters"
+      />
+    </Message>
     <DataTable
       :value="rows"
       data-key="dataPointTypeId"
@@ -176,6 +191,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import Listbox from 'primevue/listbox';
+import Message from 'primevue/message';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import PrimeButton from 'primevue/button';
@@ -260,12 +276,7 @@ const tableRef = ref<{ $el: HTMLElement } | null>(null);
  */
 async function revealSelectedRow(): Promise<void> {
   if (!props.selectedId || !props.rows.some((row) => row.dataPointTypeId === props.selectedId)) return;
-  if (!filteredRows.value.some((row) => row.dataPointTypeId === props.selectedId)) {
-    filterableFields.forEach((field) => {
-      filters.value[field].value = null;
-    });
-    filteredRows.value = props.rows;
-  }
+  if (!filteredRows.value.some((row) => row.dataPointTypeId === props.selectedId)) clearFilters();
   await nextTick();
   const findSelected = (): Element | null | undefined => tableRef.value?.$el.querySelector('.p-datatable-row-selected');
   if (!findSelected()) {
@@ -286,6 +297,23 @@ async function revealSelectedRow(): Promise<void> {
 
 onMounted(revealSelectedRow);
 watch(() => [props.selectedId, props.rows], revealSelectedRow);
+
+const selectedHiddenByFilters = computed(
+  () =>
+    !!props.selectedId &&
+    props.rows.some((row) => row.dataPointTypeId === props.selectedId) &&
+    !filteredRows.value.some((row) => row.dataPointTypeId === props.selectedId)
+);
+
+/**
+ * Removes all column filters so that every row, including the selected one, is shown again.
+ */
+function clearFilters(): void {
+  filterableFields.forEach((field) => {
+    filters.value[field].value = null;
+  });
+  filteredRows.value = props.rows;
+}
 
 const selectedRow = computed(() => props.rows.find((row) => row.dataPointTypeId === props.selectedId));
 </script>

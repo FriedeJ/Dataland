@@ -309,6 +309,21 @@ describe('Component tests for the data model documentation page', () => {
     cy.get('[data-test="data-model-code-snippet"]').should('contain.text', 'curl -H "Authorization: Bearer');
   });
 
+  it('Hints that the selected data point is hidden by filters and can restore it', () => {
+    mountAt('/data-model/sfdr?view=table&field=extendedDateFiscalYearEnd');
+    cy.get('[data-test="data-model-hidden-selection"]').should('not.exist');
+    cy.get('[data-test="data-model-table"] .p-datatable-column-filter-button').eq(2).click();
+    cy.get('[data-test="data-model-filter-categoryPath"]')
+      .contains('[role="option"]', 'Environmental > Emissions')
+      .click();
+    cy.get('[data-test="data-model-table-count"]').should('contain.text', '1 of 2');
+    cy.get('[data-test="data-model-hidden-selection"]').should('be.visible');
+    cy.get('[data-test="data-model-show-hidden-selection"]').click();
+    cy.get('[data-test="data-model-hidden-selection"]').should('not.exist');
+    cy.get('[data-test="data-model-table-count"]').should('contain.text', '2 of 2');
+    cy.get('[data-test="data-model-table"] .p-datatable-row-selected').should('contain.text', 'Fiscal Year End');
+  });
+
   it('Opens the table view from the URL and offers a CSV download', () => {
     mountAt('/data-model/sfdr?view=table');
     cy.get('[data-test="data-model-table-view"]').should('be.visible');
