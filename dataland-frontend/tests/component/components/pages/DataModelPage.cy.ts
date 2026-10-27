@@ -185,6 +185,77 @@ describe('Component tests for the data model documentation page', () => {
     cy.get('[data-test="data-model-tree"]').should('not.contain.text', 'Fiscal Year End');
   });
 
+  it('Switches to the table view, searches and selects a row while keeping the shared details panel', () => {
+    mountAt('/data-model/sfdr').then((router) => {
+      cy.get('[data-test="data-model-view-switch"]').contains('Table').click();
+      cy.wrap(router.currentRoute).its('value.query.view').should('eq', 'table');
+      cy.get('[data-test="data-model-tree"]').should('not.exist');
+
+      cy.get('[data-test="data-model-table"]').should('contain.text', 'Fiscal Year End');
+      cy.get('[data-test="data-model-table"]').should('contain.text', 'General > Company');
+      cy.get('[data-test="data-model-table"]').should('contain.text', 'extendedDate');
+      cy.get('[data-test="data-model-table"] tbody tr').should('have.length', 2);
+
+      cy.get('[data-test="data-model-search"]').type('greenhouse');
+      cy.get('[data-test="data-model-table"] tbody tr').should('have.length', 1);
+      cy.get('[data-test="data-model-search"]').clear();
+      cy.get('[data-test="data-model-search"]').type('does-not-exist');
+      cy.get('[data-test="data-model-no-results"]').should('be.visible');
+      cy.get('[data-test="data-model-search"]').clear();
+
+      cy.get('[data-test="data-model-table"]').contains('td', 'Fiscal Year End').click();
+      cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDateFiscalYearEnd');
+      cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');
+
+      cy.get('[data-test="data-model-view-switch"]').contains('Tree').click();
+      cy.wrap(router.currentRoute).its('value.query.view').should('be.undefined');
+      cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');
+    });
+  });
+
+  it('Opens the table view from the URL and offers a CSV download', () => {
+    mountAt('/data-model/sfdr?view=table');
+    cy.get('[data-test="data-model-table-view"]').should('be.visible');
+    cy.window().then((win) => {
+      cy.stub(win.URL, 'createObjectURL').as('createObjectURL').returns('blob:test');
+      cy.stub(win.URL, 'revokeObjectURL');
+    });
+    cy.get('[data-test="data-model-download-csv"]').click();
+    cy.get('@createObjectURL').should('have.been.calledOnce');
+  });
+
+  it('Highlights the connections between frameworks, data points and data formats in the relations view', () => {
+    mountAt('/data-model/sfdr?view=relations').then((router) => {
+      cy.get('[data-test="data-model-relations-view"]').should('be.visible');
+      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'none');
+      cy.get('[data-test="relations-base-extendedDate"]').should('contain.text', '2 data points');
+
+      cy.get('[data-test="relations-framework-pcaf"]').click();
+      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'focused');
+      cy.get('[data-test="relations-type-extendedDateFiscalYearEnd"]').should('have.attr', 'data-state', 'connected');
+      cy.get('[data-test="relations-type-extendedDecimalScope1"]').should('have.attr', 'data-state', 'dimmed');
+      cy.get('[data-test="relations-base-extendedDate"]').should('have.attr', 'data-state', 'connected');
+
+      cy.get('[data-test="relations-type-extendedDecimalScope1"]').click();
+      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'dimmed');
+      cy.get('[data-test="relations-framework-sfdr"]').should('have.attr', 'data-state', 'connected');
+      cy.get('[data-test="data-model-field-name"]').should('have.text', 'Scope 1 GHG emissions');
+      cy.wrap(router.currentRoute).its('value.query.field').should('eq', 'extendedDecimalScope1');
+
+      cy.get('[data-test="relations-base-extendedDate"]').click();
+      cy.get('[data-test="relations-type-extendedDateFiscalYearEnd"]').should('have.attr', 'data-state', 'connected');
+      cy.get('[data-test="relations-type-extendedDecimalScope1"]').should('have.attr', 'data-state', 'connected');
+      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'connected');
+    });
+  });
+
+  it('Filters the data points of the relations view with the shared search', () => {
+    mountAt('/data-model/sfdr?view=relations');
+    cy.get('[data-test="data-model-search"]').type('greenhouse');
+    cy.get('[data-test="relations-type-extendedDecimalScope1"]').should('exist');
+    cy.get('[data-test="relations-type-extendedDateFiscalYearEnd"]').should('not.exist');
+  });
+
   it('Shows an error message if the framework cannot be loaded', () => {
     cy.intercept('GET', '**/specifications/frameworks/sfdr', { statusCode: 500, body: {} });
     mountAt('/data-model/sfdr');

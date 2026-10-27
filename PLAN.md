@@ -53,6 +53,8 @@ format, plus hints and links elsewhere in the frontend that make users aware of 
 - [x] Real data point names in the tree (fetched in parallel, cached) and search by name and business definition
 - [x] Tree collapsed by default, expansion state preserved while browsing
 - [x] Example shown as table instead of raw JSON
+- [x] Table view (sortable, shared search, CSV download) and Relations view (framework -> data point -> data format,
+      highlighting of connections) next to the tree, switchable on the same page via `?view=`
 - [ ] Type column in the example table (needs a backend change)
 - [ ] Example download code, links to example datasets
 - [ ] Mobile polish (basic stacked layout exists)

@@ -40,5 +40,20 @@ describeIf(
       cy.get('[data-test="data-model-search"]').type('does-not-exist');
       cy.get('[data-test="data-model-no-results"]').should('be.visible');
     });
+
+    it('Can switch to the table and relations views and keeps the selected data point', () => {
+      cy.visitAndCheckAppMount('/data-model/sfdr?field=extendedDateFiscalYearEnd');
+      cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');
+
+      cy.get('[data-test="data-model-view-switch"]').contains('Table').click();
+      cy.url().should('include', 'view=table');
+      cy.get('[data-test="data-model-table"]').should('contain.text', 'Fiscal Year End');
+      cy.get('[data-test="data-model-field-name"]').should('have.text', 'Fiscal Year End');
+
+      cy.get('[data-test="data-model-view-switch"]').contains('Relations').click();
+      cy.url().should('include', 'view=relations');
+      cy.get('[data-test="relations-type-extendedDateFiscalYearEnd"]').should('have.attr', 'data-state', 'focused');
+      cy.get('[data-test="relations-framework-pcaf"]').should('have.attr', 'data-state', 'connected');
+    });
   }
 );

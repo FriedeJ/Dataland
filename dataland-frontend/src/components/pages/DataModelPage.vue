@@ -50,23 +50,54 @@
             <small>{{ dataPointCount }} {{ dataPointCount === 1 ? 'data point' : 'data points' }}</small>
           </div>
 
-          <div class="data-model-layout">
-            <div class="data-model-tree-column">
-              <IconField class="data-model-search">
-                <InputIcon class="pi pi-search" />
-                <InputText v-model="searchQuery" placeholder="Search data points" fluid data-test="data-model-search" />
-              </IconField>
-              <Tree
-                v-model:expandedKeys="expandedKeys"
-                v-model:selectionKeys="selectionKeys"
-                :value="visibleNodes"
-                selection-mode="single"
-                data-test="data-model-tree"
-                @node-select="onNodeSelect"
+          <div class="data-model-toolbar">
+            <SelectButton
+              :model-value="activeView"
+              :options="viewOptions"
+              option-label="label"
+              option-value="value"
+              :allow-empty="false"
+              data-test="data-model-view-switch"
+              @update:model-value="selectView"
+            />
+            <IconField class="data-model-search">
+              <InputIcon class="pi pi-search" />
+              <InputText v-model="searchQuery" placeholder="Search data points" fluid data-test="data-model-search" />
+            </IconField>
+          </div>
+
+          <div :class="['data-model-layout', { 'data-model-layout--stacked': activeView !== 'tree' }]">
+            <div class="data-model-main-column">
+              <template v-if="activeView === 'tree'">
+                <Tree
+                  v-model:expandedKeys="expandedKeys"
+                  v-model:selectionKeys="selectionKeys"
+                  :value="visibleNodes"
+                  selection-mode="single"
+                  data-test="data-model-tree"
+                  @node-select="onNodeSelect"
+                />
+                <p v-if="visibleNodes.length === 0" data-test="data-model-no-results">
+                  No data points match your search.
+                </p>
+              </template>
+              <DataModelRelations
+                v-else-if="activeView === 'relations'"
+                :frameworks="frameworks"
+                :current-framework-id="frameworkId"
+                :all-rows="tableRows"
+                :rows="visibleRows"
+                :types="dataPointTypes"
+                :selected-id="selectedFieldId"
+                @select="selectField"
               />
-              <p v-if="visibleNodes.length === 0" data-test="data-model-no-results">
-                No data points match your search.
-              </p>
+              <DataModelTable
+                v-else-if="activeView === 'table'"
+                :rows="visibleRows"
+                :selected-id="selectedFieldId"
+                @select="selectField"
+                @download-csv="downloadCsv"
+              />
             </div>
             <div class="data-model-details-column">
               <DataModelFieldDetails
@@ -79,7 +110,7 @@
                 @select-framework="selectFrameworkKeepingField"
               />
               <p v-else class="data-model-hint" data-test="data-model-no-selection">
-                Select a data point in the tree to see its definition.
+                Select a data point to see its definition.
               </p>
             </div>
           </div>
@@ -99,10 +130,13 @@ import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import PrimeSelect from 'primevue/select';
 import ProgressSpinner from 'primevue/progressspinner';
+import SelectButton from 'primevue/selectbutton';
 import Tree from 'primevue/tree';
 import type { TreeNode } from 'primevue/treenode';
 import TheContent from '@/components/generics/TheContent.vue';
 import MarginWrapper from '@/components/wrapper/MarginWrapper.vue';
+import DataModelRelations from '@/components/resources/dataModel/DataModelRelations.vue';
+import DataModelTable from '@/components/resources/dataModel/DataModelTable.vue';
 import DataModelFieldDetails from '@/components/resources/dataModel/DataModelFieldDetails.vue';
 import {
   useDataPointTypesQuery,
@@ -111,6 +145,9 @@ import {
 } from '@/api-queries/specification-service/useSpecificationQueries.ts';
 import {
   applyDataPointNames,
+  buildTableRows,
+  filterTableRows,
+  tableRowsToCsv,
   collectDataPointTypeIds,
   collectExpandableKeys,
   countDataPoints,
@@ -125,6 +162,16 @@ const router = useRouter();
 
 const frameworkId = computed(() => (route.params.frameworkId as string | undefined) || undefined);
 const selectedFieldId = computed(() => (route.query.field as string | undefined) || undefined);
+
+type DataModelView = 'tree' | 'table' | 'relations';
+const viewOptions: { label: string; value: DataModelView }[] = [
+  { label: 'Tree', value: 'tree' },
+  { label: 'Table', value: 'table' },
+  { label: 'Relations', value: 'relations' },
+];
+const activeView = computed<DataModelView>(() =>
+  ['table', 'relations'].includes(route.query.view as string) ? (route.query.view as DataModelView) : 'tree'
+);
 
 const frameworkListQuery = useFrameworkListQuery();
 const frameworks = computed(() =>
@@ -155,6 +202,9 @@ const dataPointCount = computed(() => countDataPoints(allNodes.value));
 
 const searchQuery = ref('');
 const visibleNodes = computed(() => filterTree(allNodes.value, searchQuery.value, searchableTexts.value));
+
+const tableRows = computed(() => buildTableRows(allNodes.value, dataPointTypes.value));
+const visibleRows = computed(() => filterTableRows(tableRows.value, searchQuery.value));
 
 const expandedKeys = ref<Record<string, boolean>>({});
 const selectionKeys = ref<Record<string, boolean>>({});
@@ -247,6 +297,33 @@ watch(searchQuery, (query) => {
 });
 
 /**
+ * Switches between the tree and the table view and keeps the selected data point.
+ */
+async function selectView(view: DataModelView): Promise<void> {
+  await router.replace({ query: { ...route.query, view: view === 'tree' ? undefined : view } });
+}
+
+/**
+ * Selects a data point (e.g. from the table) by storing it in the URL.
+ */
+async function selectField(dataPointTypeId: string): Promise<void> {
+  await router.replace({ query: { ...route.query, field: dataPointTypeId } });
+}
+
+/**
+ * Downloads the currently visible table rows as CSV file.
+ */
+function downloadCsv(): void {
+  const blob = new Blob([tableRowsToCsv(visibleRows.value)], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${frameworkId.value ?? 'data-model'}-data-points.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
  * Navigates to the documentation of the given framework.
  */
 async function selectFramework(newFrameworkId: string | undefined): Promise<void> {
@@ -258,7 +335,10 @@ async function selectFramework(newFrameworkId: string | undefined): Promise<void
  * Navigates to another framework and keeps the currently selected data point in the URL.
  */
 async function selectFrameworkKeepingField(newFrameworkId: string): Promise<void> {
-  await router.push({ path: `/data-model/${newFrameworkId}`, query: { field: selectedFieldId.value } });
+  await router.push({
+    path: `/data-model/${newFrameworkId}`,
+    query: { field: selectedFieldId.value, view: route.query.view },
+  });
 }
 
 /**
@@ -312,7 +392,14 @@ async function onNodeSelect(node: TreeNode): Promise<void> {
   gap: 2rem;
   align-items: flex-start;
 }
-.data-model-tree-column {
+.data-model-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.data-model-main-column {
   flex: 1 1 22rem;
   min-width: 0;
 }
@@ -321,19 +408,29 @@ async function onNodeSelect(node: TreeNode): Promise<void> {
   min-width: 0;
 }
 .data-model-search {
-  margin-bottom: 0.5rem;
+  width: 22rem;
+  max-width: 100%;
 }
 .data-model-hint {
   color: var(--p-text-muted-color);
 }
 /* The Dataland theme uses a dark highlight colour with dark text, which makes selected tree nodes unreadable. */
-.data-model-tree-column :deep(.p-tree-node-content.p-tree-node-selected) {
+.data-model-main-column :deep(.p-tree-node-content.p-tree-node-selected) {
   background: var(--p-primary-color);
   color: var(--p-primary-contrast-color);
 }
-.data-model-tree-column :deep(.p-tree-node-content.p-tree-node-selected .p-tree-node-icon),
-.data-model-tree-column :deep(.p-tree-node-content.p-tree-node-selected .p-tree-node-toggle-button) {
+.data-model-main-column :deep(.p-tree-node-content.p-tree-node-selected .p-tree-node-icon),
+.data-model-main-column :deep(.p-tree-node-content.p-tree-node-selected .p-tree-node-toggle-button) {
   color: var(--p-primary-contrast-color);
+}
+.data-model-layout--stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+.data-model-layout--stacked .data-model-main-column,
+.data-model-layout--stacked .data-model-details-column {
+  flex: none;
+  width: 100%;
 }
 @media (max-width: 800px) {
   .data-model-layout {
