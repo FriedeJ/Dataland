@@ -229,8 +229,8 @@ describe('Component tests for the data model documentation page', () => {
     cy.get('[data-test="data-model-filter-categoryPath"]')
       .contains('[role="option"]', 'Environmental > Emissions')
       .click();
-    cy.get('.p-datatable-filter-overlay').contains('button', 'Apply').click();
     cy.get('[data-test="data-model-table-count"]').should('contain.text', '1 of 2');
+    cy.get('.p-datatable-filter-overlay').should('be.visible');
     cy.get('[data-test="data-model-table"] tbody tr').should('have.length', 1);
     cy.get('[data-test="data-model-table"]').should('contain.text', 'Scope 1 GHG emissions');
     cy.get('[data-test="data-model-table"]').should('not.contain.text', 'Fiscal Year End');

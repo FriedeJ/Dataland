@@ -36,10 +36,17 @@
       @row-select="(event) => emit('select', event.data.dataPointTypeId)"
     >
       <Column field="name" header="Name" sortable />
-      <Column field="categoryPath" header="Category" sortable :show-filter-match-modes="false">
-        <template #filter="{ filterModel }">
+      <Column
+        field="categoryPath"
+        header="Category"
+        sortable
+        :show-filter-match-modes="false"
+        :show-apply-button="false"
+      >
+        <template #filter="{ filterModel, filterCallback }">
           <Listbox
             v-model="filterModel.value"
+            @change="filterCallback()"
             :options="optionsFor('categoryPath')"
             multiple
             checkbox
@@ -50,14 +57,21 @@
           />
         </template>
       </Column>
-      <Column field="valueType" header="Value type" sortable :show-filter-match-modes="false">
+      <Column
+        field="valueType"
+        header="Value type"
+        sortable
+        :show-filter-match-modes="false"
+        :show-apply-button="false"
+      >
         <template #body="{ data }">
           <span v-if="data.valueType">{{ data.valueType }}</span>
           <ProgressSpinner v-else style="width: 1rem; height: 1rem" />
         </template>
-        <template #filter="{ filterModel }">
+        <template #filter="{ filterModel, filterCallback }">
           <Listbox
             v-model="filterModel.value"
+            @change="filterCallback()"
             :options="optionsFor('valueType')"
             multiple
             checkbox
@@ -68,11 +82,18 @@
           />
         </template>
       </Column>
-      <Column field="allowedValues" header="Allowed values" sortable :show-filter-match-modes="false">
+      <Column
+        field="allowedValues"
+        header="Allowed values"
+        sortable
+        :show-filter-match-modes="false"
+        :show-apply-button="false"
+      >
         <template #body="{ data }">{{ data.allowedValues || '–' }}</template>
-        <template #filter="{ filterModel }">
+        <template #filter="{ filterModel, filterCallback }">
           <Listbox
             v-model="filterModel.value"
+            @change="filterCallback()"
             :options="optionsFor('allowedValues')"
             multiple
             checkbox
@@ -83,15 +104,16 @@
           />
         </template>
       </Column>
-      <Column field="usedByCount" header="Used in" sortable :show-filter-match-modes="false">
+      <Column field="usedByCount" header="Used in" sortable :show-filter-match-modes="false" :show-apply-button="false">
         <template #body="{ data }">
           <template v-if="data.usedByCount !== undefined">
             {{ data.usedByCount }} {{ data.usedByCount === 1 ? 'framework' : 'frameworks' }}
           </template>
         </template>
-        <template #filter="{ filterModel }">
+        <template #filter="{ filterModel, filterCallback }">
           <Listbox
             v-model="filterModel.value"
+            @change="filterCallback()"
             :options="optionsFor('usedByCount')"
             multiple
             checkbox
