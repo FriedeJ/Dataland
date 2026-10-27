@@ -349,7 +349,8 @@ describe('Component tests for the data model documentation page', () => {
       cy.get('[data-test="erd-data-point-name"]').should('have.text', 'Fiscal Year End');
       cy.get('[data-test="erd-value-type-name"]').should('have.text', 'Date');
       cy.get('[data-test="erd-framework-sfdr"]').should('be.visible');
-      cy.get('[data-test="erd-framework-pcaf"]').should('be.visible');
+      cy.get('[data-test="erd-framework-pcaf"]').should('be.visible').and('have.attr', 'data-current', 'false');
+      cy.get('[data-test="erd-framework-sfdr"]').should('have.attr', 'data-current', 'true');
       cy.get('[data-test="erd-entity-framework"]')
         .should('contain.text', 'General > Company')
         .and('contain.text', 'FISCAL_YEAR_END');

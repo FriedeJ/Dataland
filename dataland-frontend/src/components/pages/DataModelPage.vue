@@ -91,6 +91,7 @@
                 v-else-if="activeView === 'diagram'"
                 :rows="diagramRows"
                 :framework-names="frameworkNames"
+                :current-framework-id="frameworkId"
                 :selected-id="selectedFieldId"
                 @select="selectField"
                 @select-framework="selectFrameworkKeepingField"

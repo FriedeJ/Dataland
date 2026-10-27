@@ -27,10 +27,10 @@
           <li v-for="placement in placements" :key="placement.id">
             <PrimeButton
               :label="placement.name"
-              variant="link"
+              :severity="placement.id === currentFrameworkId ? 'primary' : 'secondary'"
               size="small"
-              class="erd-inline-button"
               :data-test="`erd-framework-${placement.id}`"
+              :data-current="placement.id === currentFrameworkId"
               @click="emit('selectFramework', placement.id)"
             />
             <span v-if="placement.placement" class="erd-placement">
@@ -136,6 +136,7 @@ const props = defineProps<{
   /** All data points of the current framework, used for the picker. */
   rows: DataModelTableRow[];
   frameworkNames: Record<string, string>;
+  currentFrameworkId?: string;
   selectedId?: string;
 }>();
 
